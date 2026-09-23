@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Analítico - Condição de Saúde</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Papa Parse para ler CSV no navegador -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
+        .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+        
+        /* Estilos do Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #c7c7cc; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a0a0a5; }
+    </style>
+</head>
+<body class="text-gray-800 relative">
+
+<div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-indigo-900 text-white flex flex-col transition-all duration-300 hidden md:flex shadow-xl overflow-y-auto">
+        <div class="p-6 text-2xl font-bold border-b border-indigo-800 text-center flex items-center justify-center">
+            <i class="fas fa-heartbeat mr-3 text-rose-400"></i> Painel ESF 1
+        </div>
+        <nav class="flex-1 p-4 space-y-3 mt-4">
+            <a href="index.html" class="flex items-center p-3 bg-indigo-800 rounded-lg text-white font-medium">
+                Home
+            </a>
+            <a href="Gestantes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Gestantes
+            </a>
+            <a href="Infantil.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+               Crianças
+            </a>
+            <a href="Diabeticos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Diabéticos
+            </a>
+            <a href="Hipertensos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Hipertensos
+            </a>
+            <a href="Mulher.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Mulher
+            </a>
+            <a href="Idosos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Idosos
+            </a>
+            <a href="agentes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                ACS
+            </a>
+            <a href="odonto.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Odonto
+            </a>
+        </nav>
+        <div class="p-4 text-xs text-indigo-400 text-center border-t border-indigo-800">
+            josé Danyel Siqueira do Nascimento
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Análise de Condição de Saúde</h1>
+                <p class="text-gray-500 mt-1">Acompanhamento e Perfil da População Atendida</p>
+            </div>
+            
+            <!-- Botão de Upload de CSV Manual -->
+            <div class="file-upload-wrapper">
+                <button class="bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition shadow flex items-center cursor-pointer">
+                    <i class="fas fa-upload mr-2"></i> Atualizar Dados (CSV)
+                </button>
+                <input type="file" id="csvFileInput" accept=".csv" />
+            </div>
+        </header>
+
+        <!-- Barra de Busca -->
+        <div class="card mb-4 border border-indigo-100 p-4">
+            <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+                <div class="relative flex-1">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <input id="buscaPaciente" type="search" placeholder="Buscar paciente por nome..."
+                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-500 text-sm"
+                           oninput="buscarPaciente(this.value)">
+                </div>
+                <button onclick="abrirResultadosBusca()" class="bg-indigo-50 text-indigo-800 border border-indigo-200 px-4 py-2.5 rounded-lg hover:bg-indigo-100 text-sm font-semibold transition">
+                    <i class="fas fa-list mr-1"></i> Ver Resultados
+                </button>
+            </div>
+            <div id="resultadoBusca" class="hidden mt-3 p-3 bg-gray-50 rounded border"></div>
+        </div>
+
+        <!-- Filtros de Microárea -->
+        <div class="bg-white p-4 rounded-xl shadow-sm mb-8 border border-indigo-100">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3"><i class="fas fa-filter mr-1"></i> Filtrar Painel por Microárea:</p>
+            <div id="microareaButtonsContainer" class="flex flex-wrap gap-2">
+                <span class="text-sm text-gray-500 italic">Faça o upload do CSV para ver as microáreas...</span>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <div class="card border-l-4 border-blue-500 flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 font-semibold mb-1 uppercase">Total de Pacientes</p>
+                    <h2 id="kpi-total" class="text-3xl font-bold text-gray-800">0</h2>
+                </div>
+                <div class="p-4 bg-blue-50 rounded-full text-blue-500">
+                    <i class="fas fa-users fa-2x"></i>
+                </div>
+            </div>
+            
+            <div class="card border-l-4 border-green-500 flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 font-semibold mb-1 uppercase">Aferição de Pressão</p>
+                    <h2 id="kpi-pressao" class="text-3xl font-bold text-gray-800">0%</h2>
+                    <p id="kpi-pressao-sub" class="text-xs text-green-600 mt-1"><i class="fas fa-check"></i> 0 medidos</p>
+                </div>
+                <div class="p-4 bg-green-50 rounded-full text-green-500">
+                    <i class="fas fa-stethoscope fa-2x"></i>
+                </div>
+            </div>
+
+            <div class="card border-l-4 border-yellow-500 flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 font-semibold mb-1 uppercase">Bolsa Família Ativo</p>
+                    <h2 id="kpi-bolsa" class="text-3xl font-bold text-gray-800">0%</h2>
+                    <p id="kpi-bolsa-sub" class="text-xs text-gray-500 mt-1">0 beneficiários</p>
+                </div>
+                <div class="p-4 bg-yellow-50 rounded-full text-yellow-500">
+                    <i class="fas fa-hand-holding-usd fa-2x"></i>
+                </div>
+            </div>
+
+            <div class="card border-l-4 border-rose-500 flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 font-semibold mb-1 uppercase">Maior Concentração</p>
+                    <h2 id="kpi-microarea" class="text-xl font-bold text-gray-800 line-clamp-1">-</h2>
+                    <p id="kpi-microarea-sub" class="text-xs text-gray-500 mt-1">-</p>
+                </div>
+                <div class="p-4 bg-rose-50 rounded-full text-rose-500">
+                    <i class="fas fa-map-marked-alt fa-2x"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demografia -->
+        <h3 id="demographics" class="text-xl font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-chart-pie mr-2 text-indigo-600"></i> Perfil Demográfico</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card hover:border-indigo-500 border border-transparent cursor-pointer" title="Barra: ver lista | Fundo: ver Pirâmide">
+                <h3 class="text-md font-bold text-gray-700 mb-1 text-center">Distribuição por Faixa Etária <i class="fas fa-hand-pointer text-indigo-400"></i></h3>
+                <p class="text-xs text-gray-500 mb-2 text-center">Clique na barra (ver lista) ou no fundo (Pirâmide Etária)</p>
+                <div class="relative h-72 w-full">
+                    <canvas id="ageChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Diversidade: Sexo e Raça/Cor</h3>
+                <div class="flex flex-col md:flex-row h-72 w-full justify-around items-center gap-4">
+                    <div class="w-full md:w-1/2 relative h-full pb-4">
+                        <canvas id="genderChart"></canvas>
+                    </div>
+                    <div class="w-full md:w-1/2 relative h-full pb-4">
+                        <canvas id="raceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Geografia e Visitas ACS -->
+        <h3 id="geography" class="text-xl font-bold text-gray-800 mb-4 flex items-center mt-10"><i class="fas fa-route mr-2 text-indigo-600"></i> Logística e ACS</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card hover:border-indigo-500 border border-transparent cursor-pointer" title="Clique para ver os pacientes da microárea">
+                 <h3 class="text-md font-bold text-gray-700 mb-2 text-center">Distribuição por Microárea (ACS) <i class="fas fa-hand-pointer text-indigo-400"></i></h3>
+                 <div class="relative h-80 w-full">
+                     <canvas id="microareaChart"></canvas>
+                 </div>
+            </div>
+            <div class="card hover:border-indigo-500 border border-transparent cursor-pointer" title="Clique para ver quem está sem visita">
+                 <h3 class="text-md font-bold text-gray-700 mb-2 text-center">Tempo sem Visita Domiciliar (ACS) <i class="fas fa-hand-pointer text-indigo-400"></i></h3>
+                 <div class="relative h-80 w-full">
+                     <canvas id="visitasChart"></canvas>
+                 </div>
+            </div>
+        </div>
+
+        <!-- Atendimentos por Profissionais -->
+        <h3 id="atendimentos" class="text-xl font-bold text-gray-800 mb-4 flex items-center mt-10"><i class="fas fa-user-md mr-2 text-indigo-600"></i> Tempo sem Atendimento Clínico</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="card hover:border-blue-500 border border-transparent cursor-pointer" title="Clique para listar os pacientes">
+                 <h3 class="text-md font-bold text-gray-700 mb-2 text-center">Atendimento Médico <i class="fas fa-hand-pointer text-blue-400"></i></h3>
+                 <div class="relative h-64 w-full">
+                     <canvas id="medicoChart"></canvas>
+                 </div>
+            </div>
+            <div class="card hover:border-emerald-500 border border-transparent cursor-pointer" title="Clique para listar os pacientes">
+                 <h3 class="text-md font-bold text-gray-700 mb-2 text-center">Enfermagem <i class="fas fa-hand-pointer text-emerald-400"></i></h3>
+                 <div class="relative h-64 w-full">
+                     <canvas id="enfermagemChart"></canvas>
+                 </div>
+            </div>
+            <div class="card hover:border-purple-500 border border-transparent cursor-pointer" title="Clique para listar os pacientes">
+                 <h3 class="text-md font-bold text-gray-700 mb-2 text-center">Odontológico <i class="fas fa-hand-pointer text-purple-400"></i></h3>
+                 <div class="relative h-64 w-full">
+                     <canvas id="odontoChart"></canvas>
+                 </div>
+            </div>
+        </div>
+        
+        <!-- Indicadores Clínicos -->
+        <h3 id="health" class="text-xl font-bold text-gray-800 mb-4 flex items-center mt-10"><i class="fas fa-file-medical-alt mr-2 text-indigo-600"></i> Indicadores Clínicos</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="card lg:col-span-2">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Status de Medições Clínicas Recentes</h3>
+                <div class="relative h-72 w-full">
+                    <canvas id="healthChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Programa Bolsa Família</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="bolsaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- MODAL: LISTA DE PACIENTES -->
+<div id="pacientesModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="p-5 border-b border-gray-200 bg-indigo-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-20">
+            <div>
+                <h2 class="text-2xl font-bold text-indigo-900" id="modalTitle">Pacientes</h2>
+                <p class="text-sm text-gray-600 mt-1" id="modalSubtitle">Carregando...</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto" id="controlesModal">
+                <label for="sortVisitas" class="text-sm font-medium text-gray-700 whitespace-nowrap"><i class="fas fa-sort-amount-down-alt mr-1"></i> Ordenar:</label>
+                <select id="sortVisitas" onchange="ordenarTabelaModal()" class="text-sm border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 bg-white">
+                    <option value="default">Por Nome (A-Z)</option>
+                    <option value="maior">Maior tempo de ausência</option>
+                    <option value="menor">Menor tempo de ausência</option>
+                </select>
+                <label for="unidadeTempo" class="text-sm font-medium text-gray-700 whitespace-nowrap ml-2"><i class="far fa-clock mr-1"></i> Exibir em:</label>
+                <select id="unidadeTempo" onchange="ordenarTabelaModal()" class="text-sm border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2 bg-white">
+                    <option value="dias">Dias</option>
+                    <option value="meses">Meses</option>
+                </select>
+                <button onclick="document.getElementById('pacientesModal').classList.add('hidden')" class="text-gray-500 hover:text-red-500 transition focus:outline-none ml-2">
+                    <i class="fas fa-times fa-xl"></i>
+                </button>
+            </div>
+        </div>
+        <div class="p-0 flex-1 overflow-auto bg-white relative z-10">
+            <div id="modalEmptyState" class="hidden p-10 text-center text-gray-500">
+                <i class="fas fa-file-csv fa-3x mb-4 text-gray-300"></i>
+                <p class="text-lg">Faça o upload do seu arquivo CSV primeiro.</p>
+            </div>
+            <table id="modalTable" class="w-full text-left border-collapse">
+                <thead class="bg-indigo-100 text-indigo-800 sticky top-0 z-10 shadow-sm text-sm">
+                    <tr>
+                        <th class="p-4 font-semibold border-b">Nome do Paciente</th>
+                        <th class="p-4 font-semibold border-b">Idade</th>
+                        <th class="p-4 font-semibold border-b text-center" id="colTempoHeader">Tempo s/ Atendimento</th>
+                        <th class="p-4 font-semibold border-b text-center">Última P.A.</th>
+                        <th class="p-4 font-semibold border-b text-center">Peso</th>
+                    </tr>
+                </thead>
+                <tbody id="modalTableBody" class="text-sm text-gray-700 divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+        <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end items-center gap-3 z-20">
+            <button id="btnImprimirLista" onclick="imprimirListaACS()" class="hidden bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition font-medium flex items-center shadow-sm">
+                <i class="fas fa-print mr-2"></i> Imprimir Lista
+            </button>
+            <button onclick="document.getElementById('pacientesModal').classList.add('hidden')" class="bg-gray-200 text-gray-800 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition font-medium">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: PIRÂMIDE ETÁRIA -->
+<div id="piramideModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div class="p-5 border-b border-gray-200 bg-indigo-50 flex justify-between items-center z-20">
+            <div>
+                <h2 class="text-2xl font-bold text-indigo-900"><i class="fas fa-balance-scale text-indigo-500 mr-2"></i> Pirâmide Etária</h2>
+                <p class="text-sm text-gray-600 mt-1">Distribuição demográfica (intervalos de 5 anos).</p>
+            </div>
+            <button onclick="document.getElementById('piramideModal').classList.add('hidden')" class="text-gray-500 hover:text-red-500 transition focus:outline-none">
+                <i class="fas fa-times fa-xl"></i>
+            </button>
+        </div>
+        <div class="p-6 flex-1 bg-white w-full min-h-[50vh] relative z-10 overflow-hidden">
+            <canvas id="piramideChart"></canvas>
+        </div>
+        <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+            <button onclick="document.getElementById('piramideModal').classList.add('hidden')" class="bg-gray-200 text-gray-800 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition font-medium">Fechar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let dadosBrutosCSV = []; 
+    let microareaSelecionada = 'TODAS'; 
+    let resultadosBusca = []; 
+    
+    let pacientesAtuaisModal = [];
+    let tipoFiltroAtivo = 'microarea'; 
+    let charts = {};
+    let piramideChartInstance = null; 
+
+    const defaultOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, animation: { duration: 800 } };
+    const noLegendOptions = { ...defaultOptions, plugins: { legend: { display: false } } };
+
+    function getFiltrados() {
+        if (microareaSelecionada === 'TODAS') return dadosBrutosCSV;
+        return dadosBrutosCSV.filter(r => {
+            let ma = r['Microárea'] ? r['Microárea'].trim() : 'NÃO INFORMADO';
+            return ma === microareaSelecionada;
+        });
+    }
+
+    function initCharts() {
+        charts.ageChart = new Chart(document.getElementById('ageChart'), { 
+            type: 'bar', 
+            data: { 
+                labels: ['0 a 2', '3 a 5', '6 a 8', '9 a 14', '15 a 18', '19 a 40', '41 a 59', '60 e +'], 
+                datasets: [{ label: 'Pacientes', data: [0,0,0,0,0,0,0,0], backgroundColor: '#6366f1', hoverBackgroundColor: '#4f46e5', borderRadius: 4 }] 
+            }, 
+            options: { 
+                ...defaultOptions,
+                onHover: (event, chartElement) => { event.native.target.style.cursor = 'pointer'; },
+                onClick: (event, elements, chart) => {
+                    if (elements.length > 0) abrirModalFiltro(chart.data.labels[elements[0].index], 'idade');
+                    else abrirModalPiramide();
+                }
+            } 
+        });
+
+        charts.genderChart = new Chart(document.getElementById('genderChart'), { type: 'pie', data: { labels: ['Feminino', 'Masculino'], datasets: [{ data: [0,0], backgroundColor: ['#ec4899', '#3b82f6'], borderWidth: 2 }] }, options: { ...defaultOptions, plugins: { title: { display: true, text: 'Gênero' }, legend: { position: 'bottom' } } } });
+        charts.raceChart = new Chart(document.getElementById('raceChart'), { type: 'doughnut', data: { labels: ['Parda', 'Branca', 'Preta', 'Amarela'], datasets: [{ data: [0,0,0,0], backgroundColor: ['#8b5cf6', '#10b981', '#f59e0b', '#ef4444'], borderWidth: 2 }] }, options: { ...defaultOptions, cutout: '60%', plugins: { title: { display: true, text: 'Raça/Cor' }, legend: { position: 'bottom' } } } });
+        charts.bolsaChart = new Chart(document.getElementById('bolsaChart'), { type: 'doughnut', data: { labels: ['Não Beneficiário', 'Beneficiário'], datasets: [{ data: [0,0], backgroundColor: ['#9ca3af', '#f59e0b'], borderWidth: 2 }] }, options: { ...defaultOptions, cutout: '65%' } });
+        charts.healthChart = new Chart(document.getElementById('healthChart'), { type: 'bar', data: { labels: ['Pressão Arterial', 'Avaliação de Peso'], datasets: [ { label: 'Registrado', data: [0,0], backgroundColor: '#10b981' }, { label: 'Não Registrado', data: [0,0], backgroundColor: '#ef4444' } ] }, options: { ...defaultOptions, scales: { x: { stacked: true }, y: { stacked: true } } } });
+        
+        function createClickableChart(canvasId, type, color, hoverColor, filterType) {
+            return new Chart(document.getElementById(canvasId), {
+                type: type,
+                data: {
+                    labels: ['Até 1 mês', '2 a 3 meses', '4 a 6 meses', 'Mais de 6 meses', 'Sem Registro'],
+                    datasets: [{ label: 'Pacientes', data: [0,0,0,0,0], backgroundColor: color, borderRadius: 4, hoverBackgroundColor: hoverColor }]
+                },
+                options: { 
+                    ...noLegendOptions, 
+                    onHover: (event, chartElement) => { event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default'; },
+                    onClick: (event, elements, chart) => {
+                        if (elements.length > 0) abrirModalFiltro(chart.data.labels[elements[0].index], filterType);
+                    }
+                }
+            });
+        }
+
+        charts.visitasChart = createClickableChart('visitasChart', 'bar', '#f59e0b', '#d97706', 'tempo_visita');
+        charts.medicoChart = createClickableChart('medicoChart', 'bar', '#3b82f6', '#2563eb', 'tempo_medico');
+        charts.enfermagemChart = createClickableChart('enfermagemChart', 'bar', '#10b981', '#059669', 'tempo_enfermagem');
+        charts.odontoChart = createClickableChart('odontoChart', 'bar', '#a855f7', '#9333ea', 'tempo_odonto');
+
+        charts.microareaChart = new Chart(document.getElementById('microareaChart'), {
+            type: 'bar', indexAxis: 'y', 
+            data: { labels: ['Nenhum dado'], datasets: [{ label: 'Pacientes', data: [0], backgroundColor: '#6366f1', borderRadius: 4, hoverBackgroundColor: '#4338ca' }] },
+            options: { ...defaultOptions, onHover: (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; }, onClick: (e, el, chart) => { if (el.length > 0) abrirModalFiltro(chart.data.labels[el[0].index], 'microarea'); } }
+        });
+    }
+
+    initCharts();
+
+    function extractAge(ageStr) {
+        if (!ageStr) return -1;
+        const match = ageStr.match(/(\d+)\s*anos/i);
+        return match ? parseInt(match[1]) : -1;
+    }
+
+    function categorizarMeses(mesesStr) {
+        if(!mesesStr || mesesStr === '-' || mesesStr.trim() === '') return 'SemRegistro';
+        let m = parseInt(mesesStr);
+        if (m <= 1) return 'Ate1';
+        if (m <= 3) return 'Ate3';
+        if (m <= 6) return 'Ate6';
+        return 'Mais6';
+    }
+
+    document.getElementById('csvFileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        Papa.parse(file, { header: true, skipEmptyLines: true, encoding: "ISO-8859-1", complete: function(results) {
+            dadosBrutosCSV = results.data;
+            if (dadosBrutosCSV.length === 0) return alert("Planilha vazia ou formato inválido!");
+            
+            microareaSelecionada = 'TODAS'; 
+            gerarBotoesMicroarea(); 
+            processAndUpdateDashboard(); 
+        }});
+    });
+
+    function buscarPaciente(texto) {
+        const q = texto.trim().toLowerCase();
+        const box = document.getElementById('resultadoBusca');
+        
+        if (q.length < 2) {
+            resultadosBusca = [];
+            box.classList.add('hidden');
+            return;
+        }
+        
+        resultadosBusca = getFiltrados().filter(r => String(r['Nome'] || '').toLowerCase().includes(q)).slice(0, 20);
+        box.classList.remove('hidden');
+        
+        if (resultadosBusca.length > 0) {
+            box.innerHTML = `
+                <div class="text-xs text-gray-500 mb-2">${resultadosBusca.length} resultado(s) encontrados</div>
+                <div class="flex flex-wrap gap-2">
+                    ${resultadosBusca.map((r, i) => `
+                        <button onclick="abrirModalBuscaExata(${i})" class="px-3 py-2 bg-white border border-indigo-200 rounded-lg text-sm font-semibold text-indigo-700 hover:bg-indigo-50 transition shadow-sm">
+                            <i class="fas fa-user mr-1 text-indigo-400"></i> ${r['Nome'] || 'Sem nome'}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            box.innerHTML = '<div class="text-sm text-gray-500">Nenhum paciente encontrado.</div>';
+        }
+    }
+
+    function abrirModalBuscaExata(index) {
+        let paciente = resultadosBusca[index];
+        tipoFiltroAtivo = 'busca';
+        pacientesAtuaisModal = [paciente]; 
+        
+        document.getElementById('modalTitle').innerText = 'Paciente: ' + (paciente['Nome'] || 'Sem Nome');
+        
+        const modal = document.getElementById('pacientesModal');
+        document.getElementById('modalEmptyState').classList.add('hidden');
+        document.getElementById('modalTable').classList.remove('hidden');
+        document.getElementById('btnImprimirLista').classList.remove('hidden');
+        document.getElementById('controlesModal').classList.remove('hidden');
+        
+        document.getElementById('sortVisitas').value = 'default';
+        renderizarTabelaModal();
+        modal.classList.remove('hidden');
+    }
+
+    function abrirResultadosBusca() {
+        if (!resultadosBusca.length) return alert('Digite um nome válido para pesquisar.');
+        tipoFiltroAtivo = 'busca';
+        pacientesAtuaisModal = [...resultadosBusca];
+        document.getElementById('modalTitle').innerText = 'Resultados da Busca';
+        
+        const modal = document.getElementById('pacientesModal');
+        document.getElementById('modalEmptyState').classList.add('hidden');
+        document.getElementById('modalTable').classList.remove('hidden');
+        document.getElementById('btnImprimirLista').classList.remove('hidden');
+        document.getElementById('controlesModal').classList.remove('hidden');
+        
+        document.getElementById('sortVisitas').value = 'default';
+        ordenarTabelaModal();
+        modal.classList.remove('hidden');
+    }
+
+    function gerarBotoesMicroarea() {
+        const set = new Set();
+        dadosBrutosCSV.forEach(r => {
+            let ma = r['Microárea'] ? r['Microárea'].trim() : 'NÃO INFORMADO';
+            if(ma && ma !== '-') set.add(ma);
+        });
+        
+        const container = document.getElementById('microareaButtonsContainer');
+        container.innerHTML = '';
+
+        const btnTodas = document.createElement('button');
+        btnTodas.id = 'btn-ma-TODAS';
+        btnTodas.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-indigo-700 text-white shadow-sm';
+        btnTodas.innerHTML = '<i class="fas fa-globe mr-1"></i> Todas (Geral)';
+        btnTodas.onclick = () => filtrarPorMicroarea('TODAS');
+        container.appendChild(btnTodas);
+
+        [...set].sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(ma => {
+            const id = 'btn-ma-' + ma.replace(/\W/g, '_');
+            const btn = document.createElement('button');
+            btn.id = id;
+            btn.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-white text-indigo-800 border border-indigo-200 hover:bg-indigo-50 shadow-sm';
+            btn.innerHTML = `<i class="fas fa-map-marker-alt text-indigo-400 mr-1"></i> Microárea ${ma}`;
+            btn.onclick = () => filtrarPorMicroarea(ma);
+            container.appendChild(btn);
+        });
+    }
+
+    function filtrarPorMicroarea(ma) {
+        microareaSelecionada = ma;
+        
+        document.querySelectorAll('.ma-btn').forEach(b => {
+            b.classList.remove('bg-indigo-700', 'text-white');
+            b.classList.add('bg-white', 'text-indigo-800', 'border-indigo-200');
+        });
+        const id = 'btn-ma-' + ma.replace(/\W/g, '_');
+        const activeBtn = document.getElementById(id);
+        if (activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-indigo-800', 'border-indigo-200');
+            activeBtn.classList.add('bg-indigo-700', 'text-white');
+        }
+        
+        document.getElementById('resultadoBusca').classList.add('hidden');
+        document.getElementById('buscaPaciente').value = '';
+        resultadosBusca = [];
+
+        processAndUpdateDashboard();
+    }
+
+    function processAndUpdateDashboard() {
+        const dados = getFiltrados(); 
+        let total = dados.length;
+
+        let genderCounts = { 'Feminino': 0, 'Masculino': 0, 'Outros': 0 };
+        let raceCounts = { 'PARDA': 0, 'BRANCA': 0, 'PRETA': 0, 'AMARELA': 0 };
+        let bolsaCounts = { 'Sim': 0, 'Não': 0 };
+        let ageCounts = [0, 0, 0, 0, 0, 0, 0, 0];
+        let pressaoCount = { medido: 0, ausente: 0 };
+        let pesoCount = { medido: 0, ausente: 0 };
+        let microareaCounts = {};
+        
+        let visCounts = { 'Ate1': 0, 'Ate3': 0, 'Ate6': 0, 'Mais6': 0, 'SemRegistro': 0 };
+        let medCounts = { 'Ate1': 0, 'Ate3': 0, 'Ate6': 0, 'Mais6': 0, 'SemRegistro': 0 };
+        let enfCounts = { 'Ate1': 0, 'Ate3': 0, 'Ate6': 0, 'Mais6': 0, 'SemRegistro': 0 };
+        let odontoCounts = { 'Ate1': 0, 'Ate3': 0, 'Ate6': 0, 'Mais6': 0, 'SemRegistro': 0 };
+
+        dados.forEach(row => {
+            let sexo = row['Sexo'] ? row['Sexo'].trim() : '';
+            if (sexo === 'Feminino' || sexo === 'Masculino') genderCounts[sexo]++;
+            
+            let raca = row['Raça/cor'] ? row['Raça/cor'].trim().toUpperCase() : '';
+            if (raceCounts[raca] !== undefined) raceCounts[raca]++;
+
+            let bolsa = row['Beneficiário do programa Bolsa Família'] ? row['Beneficiário do programa Bolsa Família'].trim() : '';
+            if (bolsa === 'Sim') bolsaCounts['Sim']++; else bolsaCounts['Não']++;
+
+            let idade = extractAge(row['Idade']);
+            if (idade >= 0) {
+                if (idade <= 2) ageCounts[0]++; 
+                else if (idade <= 5) ageCounts[1]++;
+                else if (idade <= 8) ageCounts[2]++; 
+                else if (idade <= 14) ageCounts[3]++;
+                else if (idade <= 18) ageCounts[4]++; 
+                else if (idade <= 40) ageCounts[5]++;
+                else if (idade <= 59) ageCounts[6]++; 
+                else ageCounts[7]++;
+            }
+
+            let pressao = row['Última medição de pressão arterial'] || '-';
+            if (pressao !== '-' && pressao.trim() !== '') pressaoCount.medido++; else pressaoCount.ausente++;
+            let peso = row['Última medição de peso'] || '-';
+            if (peso !== '-' && peso.trim() !== '') pesoCount.medido++; else pesoCount.ausente++;
+
+            let microarea = row['Microárea'] ? row['Microárea'].trim() : 'NÃO INFORMADO';
+            if (microarea !== '-' && microarea !== '') {
+                microareaCounts[microarea] = (microareaCounts[microarea] || 0) + 1;
+            }
+            
+            visCounts[categorizarMeses(row['Meses desde a última visita domiciliar'])]++;
+            medCounts[categorizarMeses(row['Meses desde o último atendimento médico'])]++;
+            enfCounts[categorizarMeses(row['Meses desde o último atendimento de enfermagem'])]++;
+            odontoCounts[categorizarMeses(row['Meses desde o último atendimento odontológico'])]++;
+        });
+
+        let sortedMicroareas = Object.entries(microareaCounts).sort((a, b) => b[1] - a[1]);
+        let topMicroareas = sortedMicroareas.slice(0, 8);
+        
+        document.getElementById('kpi-total').innerText = total.toLocaleString('pt-BR');
+        document.getElementById('kpi-pressao').innerText = total > 0 ? ((pressaoCount.medido / total) * 100).toFixed(1) + '%' : '0%';
+        document.getElementById('kpi-pressao-sub').innerHTML = `<i class="fas fa-check"></i> ${pressaoCount.medido.toLocaleString('pt-BR')} medidos`;
+        document.getElementById('kpi-bolsa').innerText = total > 0 ? ((bolsaCounts['Sim'] / total) * 100).toFixed(1) + '%' : '0%';
+        document.getElementById('kpi-bolsa-sub').innerText = `${bolsaCounts['Sim'].toLocaleString('pt-BR')} beneficiários`;
+        if(topMicroareas.length > 0) {
+            document.getElementById('kpi-microarea').innerText = "Microárea " + topMicroareas[0][0];
+            document.getElementById('kpi-microarea-sub').innerText = 'Maior concentração de pacientes';
+        } else {
+            document.getElementById('kpi-microarea').innerText = "-";
+            document.getElementById('kpi-microarea-sub').innerText = "-";
+        }
+
+        charts.ageChart.data.datasets[0].data = ageCounts; charts.ageChart.update();
+        charts.genderChart.data.datasets[0].data = [genderCounts['Feminino'], genderCounts['Masculino']]; charts.genderChart.update();
+        charts.raceChart.data.datasets[0].data = [raceCounts['PARDA'], raceCounts['BRANCA'], raceCounts['PRETA'], raceCounts['AMARELA']]; charts.raceChart.update();
+        charts.bolsaChart.data.datasets[0].data = [bolsaCounts['Não'], bolsaCounts['Sim']]; charts.bolsaChart.update();
+        charts.healthChart.data.datasets[0].data = [pressaoCount.medido, pesoCount.medido]; charts.healthChart.data.datasets[1].data = [pressaoCount.ausente, pesoCount.ausente]; charts.healthChart.update();
+        
+        charts.microareaChart.data.labels = topMicroareas.map(m => m[0]); 
+        charts.microareaChart.data.datasets[0].data = topMicroareas.map(m => m[1]); 
+        charts.microareaChart.update();
+        
+        charts.visitasChart.data.datasets[0].data = [visCounts['Ate1'], visCounts['Ate3'], visCounts['Ate6'], visCounts['Mais6'], visCounts['SemRegistro']]; charts.visitasChart.update();
+        charts.medicoChart.data.datasets[0].data = [medCounts['Ate1'], medCounts['Ate3'], medCounts['Ate6'], medCounts['Mais6'], medCounts['SemRegistro']]; charts.medicoChart.update();
+        charts.enfermagemChart.data.datasets[0].data = [enfCounts['Ate1'], enfCounts['Ate3'], enfCounts['Ate6'], enfCounts['Mais6'], enfCounts['SemRegistro']]; charts.enfermagemChart.update();
+        charts.odontoChart.data.datasets[0].data = [odontoCounts['Ate1'], odontoCounts['Ate3'], odontoCounts['Ate6'], odontoCounts['Mais6'], odontoCounts['SemRegistro']]; charts.odontoChart.update();
+
+        document.getElementById('csvFileInput').value = '';
+    }
+
+    function abrirModalPiramide() {
+        const dados = getFiltrados();
+        if (dados.length === 0) return alert("Nenhum dado disponível para a pirâmide etária.");
+
+        let labels = [
+            '0 a 4', '5 a 9', '10 a 14', '15 a 19', '20 a 24', '25 a 29',
+            '30 a 34', '35 a 39', '40 a 44', '45 a 49', '50 a 54', '55 a 59',
+            '60 a 64', '65 a 69', '70 a 74', '75 a 79', '80+'
+        ];
+        
+        let mascData = new Array(17).fill(0);
+        let femData = new Array(17).fill(0);
+
+        dados.forEach(row => {
+            let idade = extractAge(row['Idade']);
+            let sexo = row['Sexo'] ? row['Sexo'].trim() : '';
+            
+            if (idade >= 0 && (sexo === 'Masculino' || sexo === 'Feminino')) {
+                let index = Math.floor(idade / 5);
+                if (index > 16) index = 16; 
+
+                if (sexo === 'Masculino') mascData[index]++;
+                else if (sexo === 'Feminino') femData[index]++;
+            }
+        });
+
+        let mascDataNegativo = mascData.map(v => -Math.abs(v));
+
+        document.getElementById('piramideModal').classList.remove('hidden');
+        if (piramideChartInstance) piramideChartInstance.destroy();
+
+        const ctx = document.getElementById('piramideChart').getContext('2d');
+        piramideChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Masculino', data: mascDataNegativo, backgroundColor: '#3b82f6', borderRadius: 4 },
+                    { label: 'Feminino', data: femData, backgroundColor: '#ec4899', borderRadius: 4 }
+                ]
+            },
+            options: {
+                indexAxis: 'y', 
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        stacked: true,
+                        ticks: { callback: function(value) { return Math.abs(value); } }
+                    },
+                    y: { stacked: true, position: 'left' }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) { return context.dataset.label + ': ' + Math.abs(context.raw) + ' pessoas'; }
+                        }
+                    },
+                    legend: { position: 'top' }
+                }
+            }
+        });
+    }
+
+    function abrirModalFiltro(valorClicado, tipoFiltro) {
+        tipoFiltroAtivo = tipoFiltro; 
+
+        const modal = document.getElementById('pacientesModal');
+        const emptyState = document.getElementById('modalEmptyState');
+        const table = document.getElementById('modalTable');
+        const btnImprimir = document.getElementById('btnImprimirLista');
+        const controlesModal = document.getElementById('controlesModal');
+        const tbody = document.getElementById('modalTableBody');
+        
+        if (tipoFiltro === 'microarea') {
+            document.getElementById('modalTitle').innerText = 'Microárea ' + valorClicado;
+        } else if (tipoFiltro === 'idade') {
+            document.getElementById('modalTitle').innerText = 'Faixa Etária: ' + valorClicado;
+        } else {
+            let profissional = tipoFiltro.includes('medico') ? 'Médico' : 
+                               tipoFiltro.includes('enfermagem') ? 'Enfermagem' : 
+                               tipoFiltro.includes('odonto') ? 'Odontológico' : 'Visita Domiciliar';
+            document.getElementById('modalTitle').innerText = `${profissional}: ${valorClicado}`;
+        }
+
+        const dadosBase = getFiltrados();
+        if (dadosBase.length === 0) {
+            document.getElementById('modalSubtitle').innerText = "Dados indisponíveis";
+            emptyState.classList.remove('hidden'); table.classList.add('hidden'); btnImprimir.classList.add('hidden'); controlesModal.classList.add('hidden');
+            modal.classList.remove('hidden');
+            return;
+        }
+
+        document.getElementById('modalSubtitle').innerText = "Processando dados...";
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center p-8 text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> Carregando lista de pacientes...</td></tr>';
+        
+        emptyState.classList.add('hidden'); table.classList.remove('hidden'); btnImprimir.classList.remove('hidden'); controlesModal.classList.remove('hidden');
+        modal.classList.remove('hidden');
+
+        setTimeout(() => {
+            if (tipoFiltro === 'microarea') {
+                pacientesAtuaisModal = dadosBase.filter(row => {
+                    let m = row['Microárea'] ? row['Microárea'].trim() : 'NÃO INFORMADO';
+                    return m === valorClicado;
+                });
+            } else if (tipoFiltro === 'idade') {
+                pacientesAtuaisModal = dadosBase.filter(row => {
+                    let idade = extractAge(row['Idade']);
+                    if (idade === -1) return false;
+                    
+                    if (valorClicado === '0 a 2') return idade >= 0 && idade <= 2;
+                    if (valorClicado === '3 a 5') return idade > 2 && idade <= 5;
+                    if (valorClicado === '6 a 8') return idade > 5 && idade <= 8;
+                    if (valorClicado === '9 a 14') return idade > 8 && idade <= 14;
+                    if (valorClicado === '15 a 18') return idade > 14 && idade <= 18;
+                    if (valorClicado === '19 a 40') return idade > 18 && idade <= 40;
+                    if (valorClicado === '41 a 59') return idade > 40 && idade <= 59;
+                    if (valorClicado === '60 e +') return idade >= 60;
+                    
+                    return false;
+                });
+            } else {
+                let nomeColunaMes = '';
+                if (tipoFiltro === 'tempo_visita') nomeColunaMes = 'Meses desde a última visita domiciliar';
+                else if (tipoFiltro === 'tempo_medico') nomeColunaMes = 'Meses desde o último atendimento médico';
+                else if (tipoFiltro === 'tempo_enfermagem') nomeColunaMes = 'Meses desde o último atendimento de enfermagem';
+                else if (tipoFiltro === 'tempo_odonto') nomeColunaMes = 'Meses desde o último atendimento odontológico';
+
+                pacientesAtuaisModal = dadosBase.filter(row => {
+                    let m = (row[nomeColunaMes] && row[nomeColunaMes] !== '-') ? parseInt(row[nomeColunaMes]) : -1;
+                    if (valorClicado === 'Até 1 mês') return m >= 0 && m <= 1;
+                    if (valorClicado === '2 a 3 meses') return m > 1 && m <= 3;
+                    if (valorClicado === '4 a 6 meses') return m > 3 && m <= 6;
+                    if (valorClicado === 'Mais de 6 meses') return m > 6;
+                    if (valorClicado === 'Sem Registro') return m === -1;
+                    return false;
+                });
+            }
+            document.getElementById('sortVisitas').value = 'default';
+            ordenarTabelaModal(); 
+        }, 50);
+    }
+
+    function getValorTempoFiltroAtual(row, unidade) {
+        let sufixoColuna = 'a última visita domiciliar';
+        if (tipoFiltroAtivo === 'tempo_medico') sufixoColuna = 'o último atendimento médico';
+        else if (tipoFiltroAtivo === 'tempo_enfermagem') sufixoColuna = 'o último atendimento de enfermagem';
+        else if (tipoFiltroAtivo === 'tempo_odonto') sufixoColuna = 'o último atendimento odontológico';
+        
+        if (tipoFiltroAtivo === 'microarea' || tipoFiltroAtivo === 'idade' || tipoFiltroAtivo === 'busca') sufixoColuna = 'a última visita domiciliar'; 
+
+        let prefixoColuna = (unidade === 'meses') ? 'Meses desde ' : 'Dias desde ';
+        let nomeColunaFinal = prefixoColuna + sufixoColuna;
+
+        let valor = row[nomeColunaFinal];
+        if (!valor || valor === '-' || valor.trim() === '') return -1;
+        return parseInt(valor);
+    }
+
+    function ordenarTabelaModal() {
+        const metodo = document.getElementById('sortVisitas').value;
+        const unidade = document.getElementById('unidadeTempo').value;
+
+        if (metodo === 'default') {
+            pacientesAtuaisModal.sort((a, b) => (a['Nome'] || '').localeCompare(b['Nome'] || ''));
+        } else if (metodo === 'maior') {
+            pacientesAtuaisModal.sort((a, b) => {
+                let d1 = getValorTempoFiltroAtual(a, unidade), d2 = getValorTempoFiltroAtual(b, unidade);
+                if (d1 === -1 && d2 === -1) return 0;
+                if (d1 === -1) return -1; if (d2 === -1) return 1; return d2 - d1;
+            });
+        } else if (metodo === 'menor') {
+            pacientesAtuaisModal.sort((a, b) => {
+                let d1 = getValorTempoFiltroAtual(a, unidade), d2 = getValorTempoFiltroAtual(b, unidade);
+                if (d1 === -1 && d2 === -1) return 0;
+                if (d1 === -1) return 1; if (d2 === -1) return -1; return d1 - d2;
+            });
+        }
+        renderizarTabelaModal();
+    }
+
+    function renderizarTabelaModal() {
+        const tbody = document.getElementById('modalTableBody');
+        const unidade = document.getElementById('unidadeTempo').value;
+        const colTempoHeader = document.getElementById('colTempoHeader');
+        
+        let nomeProfissional = tipoFiltroAtivo.includes('medico') ? 'Médico' : 
+                               tipoFiltroAtivo.includes('enfermagem') ? 'Enfermagem' : 
+                               tipoFiltroAtivo.includes('odonto') ? 'Odontologia' : 'Visita (ACS)';
+        
+        let labelUnidade = (unidade === 'meses') ? 'Meses' : 'Dias';
+        colTempoHeader.innerText = `Tempo s/ ${nomeProfissional} (${labelUnidade})`;
+
+        document.getElementById('modalSubtitle').innerText = `Total: ${pacientesAtuaisModal.length} pacientes listados.`;
+
+        let htmlAcumulado = '';
+        let limiteAlerta = (unidade === 'meses') ? 3 : 90;
+
+        pacientesAtuaisModal.forEach(p => {
+            let tempoValor = getValorTempoFiltroAtual(p, unidade);
+            let corAlertaVisita = '';
+            let textoTempo = (tempoValor === -1) ? 'Sem Registro' : tempoValor;
+            
+            if(tempoValor > limiteAlerta) corAlertaVisita = 'text-red-600 font-bold';
+            else if (tempoValor === -1) corAlertaVisita = 'text-gray-400 italic';
+
+            htmlAcumulado += `
+                <tr class="border-b border-gray-100 hover:bg-indigo-50 transition">
+                    <td class="p-3 font-medium text-gray-900">${p['Nome'] || 'Sem Nome'}</td>
+                    <td class="p-3">${p['Idade'] || '-'}</td>
+                    <td class="p-3 text-center ${corAlertaVisita}">${textoTempo}</td>
+                    <td class="p-3 text-center">${p['Última medição de pressão arterial'] || '-'}</td>
+                    <td class="p-3 text-center">${p['Última medição de peso'] || '-'}</td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = htmlAcumulado;
+    }
+
+    function imprimirListaACS() {
+        const titulo = document.getElementById('modalTitle').innerText;
+        const subtitulo = document.getElementById('modalSubtitle').innerText;
+        const tabelaHTML = document.getElementById('modalTable').outerHTML;
+        const janelaImpressao = window.open('', '_blank', 'width=900,height=600');
+        
+        janelaImpressao.document.write(`
+            <html>
+            <head>
+                <title>Relatório - ${titulo}</title>
+                <style>
+                    body { font-family: 'Arial', sans-serif; padding: 20px; color: #333; }
+                    h1 { margin-bottom: 5px; color: #1e3a8a; font-size: 24px; }
+                    p { margin-top: 0; color: #666; font-size: 14px; margin-bottom: 20px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+                    th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+                    th { background-color: #f3f4f6; color: #1f2937; font-weight: bold; text-align: center; }
+                    td:nth-child(3), td:nth-child(4), td:nth-child(5) { text-align: center; }
+                    tr:nth-child(even) { background-color: #f9fafb; }
+                    .text-red-600 { color: #dc2626; font-weight: bold; }
+                    .text-gray-400 { color: #9ca3af; font-style: italic; }
+                    @media print { body { padding: 0; } @page { margin: 1cm; } }
+                </style>
+            </head>
+            <body>
+                <h1>${titulo}</h1>
+                <p>Dashboard de Saúde e Triagem APS - ${subtitulo}</p>
+                ${tabelaHTML}
+            </body>
+            </html>
+        `);
+        janelaImpressao.document.close();
+        janelaImpressao.focus();
+        setTimeout(() => { janelaImpressao.print(); janelaImpressao.close(); }, 500);
+    }
+</script>
+</body>
+</html>

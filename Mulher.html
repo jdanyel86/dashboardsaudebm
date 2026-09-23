@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Saúde - Saúde da Mulher</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Papa Parse para ler CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- SheetJS (XLSX) para ler arquivos do Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
+        .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="text-gray-800 relative">
+
+<div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-rose-900 text-white flex-col transition-all duration-300 hidden md:flex shadow-xl overflow-y-auto z-20">
+        <div class="p-6 text-2xl font-bold border-b border-rose-800 text-center flex items-center justify-center">
+            <i class="fas fa-venus mr-3 text-rose-300"></i> PSF 1
+        </div>
+        <nav class="flex-1 p-4 space-y-3 mt-4">
+             <a href="index.html" class="flex items-center p-3 bg-indigo-800 rounded-lg text-white font-medium">
+                Home
+            </a>
+            <a href="Gestantes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Gestantes
+            </a>
+            <a href="Infantil.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+               Crianças
+            </a>
+            <a href="Diabeticos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Diabéticos
+            </a>
+            <a href="Hipertensos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Hipertensos
+            </a>
+            <a href="Mulher.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Mulher
+            </a>
+            <a href="Idosos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Idosos
+            </a>
+            <a href="agentes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                ACS
+            </a>
+            <a href="odonto.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Odonto
+            </a>
+        </nav>
+        <div class="p-4 text-xs text-rose-300 text-center border-t border-rose-800">
+            José Danyel Siqueira do Nascimento
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Saúde da Mulher</h1>
+                <p class="text-gray-500 mt-1 text-sm md:text-base">Monitoramento de Consultas, Citologia (Preventivo), HPV e Mamografia.</p>
+            </div>
+            
+            <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="limparDadosLocais()" class="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
+                    <i class="fas fa-eraser mr-2"></i> Limpar Dados
+                </button>
+                <div class="file-upload-wrapper">
+                    <button class="bg-rose-600 text-white px-5 py-2.5 rounded-lg hover:bg-rose-700 transition shadow flex items-center cursor-pointer text-sm font-medium">
+                        <i class="fas fa-file-excel mr-2"></i> Carregar Planilha
+                    </button>
+                    <input type="file" id="csvFileInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+                </div>
+            </div>
+        </header>
+
+        <!-- Barra de Busca -->
+        <div class="card mb-4 border border-rose-100 p-4">
+            <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+                <div class="relative flex-1">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <input id="buscaPaciente" type="search" placeholder="Buscar paciente por nome..."
+                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-500 text-sm"
+                           oninput="buscarPaciente(this.value)">
+                </div>
+                <button onclick="abrirResultadosBusca()" class="bg-rose-50 text-rose-800 border border-rose-200 px-4 py-2.5 rounded-lg hover:bg-rose-100 text-sm font-semibold transition">
+                    <i class="fas fa-list mr-1"></i> Ver Resultados
+                </button>
+            </div>
+            <div id="resultadoBusca" class="hidden mt-3 p-3 bg-gray-50 rounded border border-gray-200"></div>
+        </div>
+
+        <!-- Filtros de Microárea -->
+        <div class="bg-white p-4 rounded-xl shadow-sm mb-8 border border-rose-100">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3"><i class="fas fa-filter mr-1"></i> Filtrar por Microárea:</p>
+            <div id="microareaButtonsContainer" class="flex flex-wrap gap-2">
+                <span class="text-sm text-gray-500 italic">Faça o upload da planilha para carregar as microáreas...</span>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-8">
+            <div class="card border-l-4 border-rose-500 flex items-center justify-between cursor-pointer hover:bg-rose-50" onclick="abrirModalFiltro('TODAS', 'total')">
+                <div>
+                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Total de Mulheres</p>
+                    <h2 id="kpi-total" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
+                </div>
+                <div class="p-3 md:p-4 bg-rose-100 rounded-full text-rose-600">
+                    <i class="fas fa-female fa-xl"></i>
+                </div>
+            </div>
+            
+            <div class="card border-l-4 border-emerald-500 flex items-center justify-between cursor-pointer hover:bg-emerald-50" onclick="abrirModalFiltro('Em dia', 'consulta')">
+                <div>
+                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Consultas Anuais</p>
+                    <h2 id="kpi-consultas" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
+                    <p class="text-xs text-emerald-600 mt-1">Atendimento em dia</p>
+                </div>
+                <div class="p-3 md:p-4 bg-emerald-50 rounded-full text-emerald-500">
+                    <i class="fas fa-user-md fa-xl"></i>
+                </div>
+            </div>
+
+            <div class="card border-l-4 border-fuchsia-500 flex items-center justify-between cursor-pointer hover:bg-fuchsia-50" onclick="abrirModalFiltro('Realizado', 'citologia')">
+                <div>
+                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Citologia</p>
+                    <h2 id="kpi-citologia" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
+                    <p class="text-xs text-fuchsia-600 mt-1">Preventivo Avaliado</p>
+                </div>
+                <div class="p-3 md:p-4 bg-fuchsia-50 rounded-full text-fuchsia-500">
+                    <i class="fas fa-microscope fa-xl"></i>
+                </div>
+            </div>
+
+            <div class="card border-l-4 border-purple-500 flex items-center justify-between cursor-pointer hover:bg-purple-50" onclick="abrirModalFiltro('Realizado', 'mamografia')">
+                <div>
+                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Mamografia</p>
+                    <h2 id="kpi-mamografia" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
+                    <p class="text-xs text-purple-600 mt-1">Rastreamento</p>
+                </div>
+                <div class="p-3 md:p-4 bg-purple-50 rounded-full text-purple-500">
+                    <i class="fas fa-x-ray fa-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-sm text-gray-500 mb-4 ml-1">Dica: <b>Clique nas fatias ou barras de qualquer gráfico</b> para abrir a lista de pacientes correspondentes.</p>
+        
+        <!-- Bloco 1: Consultas e Citologia -->
+        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-notes-medical mr-2 text-rose-600"></i> Acompanhamento e Prevenção do Câncer de Colo</h3>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Consultas (Médica/Enfermagem)</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="consultasChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Citopatológico (Preventivo)</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="citologiaChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bloco 2: HPV e Mamografia -->
+        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center mt-10"><i class="fas fa-ribbon mr-2 text-rose-600"></i> Rastreamento Adicional e Imunização</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Rastreio/Vacina HPV</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="hpvChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Mamografia</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="mamografiaChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: LISTA DE PACIENTES -->
+<!-- ============================================== -->
+<div id="pacientesModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col overflow-hidden">
+        
+        <div class="p-5 border-b border-gray-200 bg-rose-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-20">
+            <div>
+                <h2 class="text-2xl font-bold text-rose-900" id="modalTitle">Saúde da Mulher</h2>
+                <p class="text-sm text-gray-600 mt-1" id="modalSubtitle">Carregando...</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto" id="controlesModal">
+                <label for="sortTabela" class="text-sm font-medium text-gray-700 whitespace-nowrap"><i class="fas fa-sort-amount-down-alt mr-1"></i> Ordenar:</label>
+                <select id="sortTabela" onchange="ordenarTabelaModal()" class="text-sm border border-gray-300 rounded-md shadow-sm focus:ring-rose-500 focus:border-rose-500 p-2 bg-white">
+                    <option value="default">Por Nome (A-Z)</option>
+                    <option value="consulta_maior">Maior tempo s/ Consulta</option>
+                </select>
+
+                <button onclick="fecharModal()" class="text-gray-500 hover:text-red-500 transition focus:outline-none ml-2">
+                    <i class="fas fa-times fa-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-0 flex-1 overflow-auto bg-white relative z-10">
+            <div id="modalEmptyState" class="hidden p-10 text-center text-gray-500">
+                <i class="fas fa-file-csv fa-3x mb-4 text-gray-300"></i>
+                <p class="text-lg">Faça o upload da sua planilha primeiro.</p>
+            </div>
+            
+            <table id="modalTable" class="w-full text-left border-collapse min-w-[800px]">
+                <thead class="bg-rose-100 text-rose-900 sticky top-0 z-10 shadow-sm text-xs uppercase font-bold tracking-wider">
+                    <tr>
+                        <th class="p-4 border-b">Nome / Idade</th>
+                        <th class="p-4 border-b text-center">Tempo s/ Consulta</th>
+                        <th class="p-4 border-b text-center">Citologia</th>
+                        <th class="p-4 border-b text-center">HPV</th>
+                        <th class="p-4 border-b text-center">Mamografia</th>
+                    </tr>
+                </thead>
+                <tbody id="modalTableBody" class="text-sm text-gray-700 divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+        
+        <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end items-center gap-3 z-20">
+            <button id="btnImprimirLista" onclick="imprimirLista()" class="hidden bg-rose-600 text-white px-5 py-2.5 rounded-lg hover:bg-rose-700 transition font-medium flex items-center shadow-sm">
+                <i class="fas fa-print mr-2"></i> Imprimir Lista
+            </button>
+            <button onclick="fecharModal()" class="bg-gray-200 text-gray-800 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition font-medium">
+                Fechar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let dadosBrutos = []; 
+    let microareaSelecionada = 'TODAS'; 
+    let resultadosBusca = []; 
+    let pacientesAtuaisModal = [];
+    let charts = {};
+
+    const defaultOptions = { 
+        responsive: true, maintainAspectRatio: false, 
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, 
+        animation: { duration: 600 } 
+    };
+
+    function getFiltrados() {
+        if (microareaSelecionada === 'TODAS') return dadosBrutos;
+        return dadosBrutos.filter(r => {
+            let ma = r['Microárea'] ? String(r['Microárea']).trim() : 'NÃO INFORMADO';
+            return ma === microareaSelecionada;
+        });
+    }
+
+    // Funções de Extração de Dados
+    function normalizarNumero(v) {
+        if (v === null || v === undefined || String(v).trim() === '' || String(v).trim() === '-') return null;
+        const n = parseInt(String(v).replace(',', '.'), 10);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    // Para a mulher, consideramos a consulta em dia se foi no último ano (365 dias)
+    function getDiasConsulta(row) {
+        const c1 = normalizarNumero(row['Dias desde o último atendimento médico']);
+        const c2 = normalizarNumero(row['Dias desde o último atendimento de enfermagem']);
+        const c3 = normalizarNumero(row['Meses desde o último atendimento médico']) !== null ? normalizarNumero(row['Meses desde o último atendimento médico']) * 30 : null;
+        const c4 = normalizarNumero(row['Meses desde o último atendimento de enfermagem']) !== null ? normalizarNumero(row['Meses desde o último atendimento de enfermagem']) * 30 : null;
+        
+        let validos = [c1, c2, c3, c4].filter(v => v !== null);
+        if (validos.length === 0) return null; 
+        return Math.min(...validos);
+    }
+
+    function checkRealizado(row, chavesPossiveis) {
+        for (let key of Object.keys(row)) {
+            let keyUpper = key.toUpperCase();
+            if (chavesPossiveis.some(c => keyUpper.includes(c.toUpperCase()))) {
+                let val = String(row[key] || '').trim().toUpperCase();
+                if (val === 'SIM' || val === 'REALIZADO' || val === 'AVALIADO') return true;
+                let num = normalizarNumero(row[key]);
+                if (num !== null && num > 0) return true; 
+                if (val.match(/^\d{2}\/\d{2}\/\d{4}/)) return true;
+            }
+        }
+        return false;
+    }
+
+    function buildChart(id, type, data, filterName, isDoughnut = false) {
+        let opt = { ...defaultOptions };
+        if (isDoughnut) opt.cutout = '65%';
+        opt.onHover = (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; };
+        opt.onClick = (e, el, chart) => {
+            if (el.length > 0) abrirModalFiltro(chart.data.labels[el[0].index], filterName);
+        };
+        return new Chart(document.getElementById(id), { type: type, data: data, options: opt });
+    }
+
+    function initCharts() {
+        charts.consultasChart = buildChart('consultasChart', 'bar', {
+            labels: ['Em dia (<= 1 ano)', 'Atrasada', 'Sem Registro'],
+            datasets: [{ label: 'Pacientes', data: [0,0,0], backgroundColor: ['#10b981', '#f59e0b', '#9ca3af'], borderRadius: 4 }]
+        }, 'consulta');
+
+        let pieColors = ['#e11d48', '#e2e8f0']; 
+
+        charts.citologiaChart = buildChart('citologiaChart', 'doughnut', {
+            labels: ['Realizado', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: pieColors, borderWidth: 2 }]
+        }, 'citologia', true);
+
+        charts.hpvChart = buildChart('hpvChart', 'doughnut', {
+            labels: ['Realizado', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#8b5cf6', '#e2e8f0'], borderWidth: 2 }]
+        }, 'hpv', true);
+
+        charts.mamografiaChart = buildChart('mamografiaChart', 'doughnut', {
+            labels: ['Realizado', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#d946ef', '#e2e8f0'], borderWidth: 2 }]
+        }, 'mamografia', true);
+    }
+
+    initCharts();
+
+    // === PROCESSAMENTO DE PLANILHAS ===
+    document.getElementById('csvFileInput').addEventListener('change', e => {
+        const file = e.target.files[0]; if(!file) return;
+        const reader = new FileReader();
+        const nomeArquivo = file.name.toLowerCase();
+
+        if(nomeArquivo.endsWith('.xlsx') || nomeArquivo.endsWith('.xls')){
+            reader.onload = ev => {
+                const data = new Uint8Array(ev.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const jsonResult = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
+                processarDados(jsonResult);
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            reader.onload = ev => {
+                Papa.parse(ev.target.result, {
+                    header: true, skipEmptyLines: true, encoding: "ISO-8859-1",
+                    complete: results => processarDados(results.data)
+                });
+            };
+            reader.readAsText(file, 'ISO-8859-1');
+        }
+    });
+
+    function processarDados(dataArray) {
+        if(!dataArray.length) return alert('Planilha vazia!');
+        
+        // Filtra para manter apenas o sexo feminino, se a coluna existir, para garantir a precisão do painel
+        dadosBrutos = dataArray.filter(r => {
+            if (r['Sexo']) {
+                let sexo = String(r['Sexo']).trim().toUpperCase();
+                if (sexo === 'MASCULINO' || sexo === 'M') return false;
+            }
+            return true;
+        });
+
+        microareaSelecionada = 'TODAS'; 
+        gerarBotoesMicroarea(); 
+        processAndUpdateDashboard(); 
+    }
+
+    function limparDadosLocais() {
+        if (confirm("Deseja apagar os dados carregados?")) {
+            dadosBrutos = [];
+            document.getElementById('csvFileInput').value = '';
+            processAndUpdateDashboard();
+            document.getElementById('microareaButtonsContainer').innerHTML = '<span class="text-sm text-gray-500 italic">Planilha limpa...</span>';
+        }
+    }
+
+    function gerarBotoesMicroarea() {
+        const set = new Set();
+        dadosBrutos.forEach(r => { let ma = r['Microárea'] ? String(r['Microárea']).trim() : ''; if(ma && ma !== '-') set.add(ma); });
+        const container = document.getElementById('microareaButtonsContainer');
+        container.innerHTML = '';
+        
+        const btnTodas = document.createElement('button');
+        btnTodas.id = 'btn-ma-TODAS';
+        btnTodas.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-rose-700 text-white shadow-sm';
+        btnTodas.innerHTML = '<i class="fas fa-globe mr-1"></i> Todas (Geral)';
+        btnTodas.onclick = () => filtrarPorMicroarea('TODAS');
+        container.appendChild(btnTodas);
+
+        [...set].sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(ma => {
+            const btn = document.createElement('button');
+            btn.id = 'btn-ma-' + ma.replace(/\W/g, '_');
+            btn.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-white text-rose-800 border border-rose-200 hover:bg-rose-50 shadow-sm';
+            btn.innerHTML = `<i class="fas fa-map-marker-alt text-rose-400 mr-1"></i> Microárea ${ma}`;
+            btn.onclick = () => filtrarPorMicroarea(ma);
+            container.appendChild(btn);
+        });
+    }
+
+    function filtrarPorMicroarea(ma) {
+        microareaSelecionada = ma;
+        document.querySelectorAll('.ma-btn').forEach(b => {
+            b.classList.remove('bg-rose-700', 'text-white'); b.classList.add('bg-white', 'text-rose-800', 'border-rose-200');
+        });
+        const activeBtn = document.getElementById('btn-ma-' + ma.replace(/\W/g, '_'));
+        if (activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-rose-800', 'border-rose-200'); activeBtn.classList.add('bg-rose-700', 'text-white');
+        }
+        processAndUpdateDashboard();
+    }
+
+    // === LÓGICA DE INDICADORES ===
+    function processAndUpdateDashboard() {
+        const dados = getFiltrados(); 
+        let total = dados.length;
+
+        let cons = [0,0,0]; // Em dia (<= 365 dias), Atrasada, Sem Reg
+        let cito = [0,0]; // Realizado, Pendente
+        let hpv = [0,0];
+        let mamo = [0,0];
+
+        dados.forEach(r => {
+            let diasCons = getDiasConsulta(r);
+            if (diasCons === null) cons[2]++;
+            else if (diasCons <= 365) cons[0]++; else cons[1]++;
+
+            checkRealizado(r, ['Citopatológico', 'Citologia', 'Papanicolau', 'Preventivo']) ? cito[0]++ : cito[1]++;
+            checkRealizado(r, ['HPV']) ? hpv[0]++ : hpv[1]++;
+            checkRealizado(r, ['Mamografia', 'Mamográfico']) ? mamo[0]++ : mamo[1]++;
+        });
+
+        document.getElementById('kpi-total').innerText = total.toLocaleString('pt-BR');
+        document.getElementById('kpi-consultas').innerText = cons[0].toLocaleString('pt-BR');
+        document.getElementById('kpi-citologia').innerText = cito[0].toLocaleString('pt-BR');
+        document.getElementById('kpi-mamografia').innerText = mamo[0].toLocaleString('pt-BR');
+
+        charts.consultasChart.data.datasets[0].data = cons; charts.consultasChart.update();
+        charts.citologiaChart.data.datasets[0].data = cito; charts.citologiaChart.update();
+        charts.hpvChart.data.datasets[0].data = hpv; charts.hpvChart.update();
+        charts.mamografiaChart.data.datasets[0].data = mamo; charts.mamografiaChart.update();
+    }
+
+    // === BUSCA E MODAL ===
+    function buscarPaciente(texto) {
+        const q = texto.trim().toLowerCase();
+        const box = document.getElementById('resultadoBusca');
+        if (q.length < 2) { resultadosBusca = []; box.classList.add('hidden'); return; }
+        resultadosBusca = getFiltrados().filter(r => String(r['Nome'] || '').toLowerCase().includes(q)).slice(0, 20);
+        box.classList.remove('hidden');
+        if (resultadosBusca.length > 0) {
+            box.innerHTML = `<div class="text-xs text-gray-500 mb-2">${resultadosBusca.length} resultado(s)</div>
+                <div class="flex flex-wrap gap-2">
+                    ${resultadosBusca.map((r, i) => `<button onclick="abrirModalComFiltro([resultadosBusca[${i}]], 'Paciente:${r['Nome']}')" class="px-3 py-2 bg-white border border-rose-200 rounded-lg text-sm text-rose-700 shadow-sm">${r['Nome'] || 'Sem nome'}</button>`).join('')}
+                </div>`;
+        } else {
+            box.innerHTML = '<div class="text-sm text-gray-500">Nenhuma paciente encontrada.</div>';
+        }
+    }
+    function abrirResultadosBusca() {
+        if (!resultadosBusca.length) return alert('Digite um nome válido.');
+        abrirModalComFiltro(resultadosBusca, 'Resultados da Busca');
+    }
+
+    function abrirModalFiltro(valor, tipo) {
+        const base = getFiltrados();
+        let filtrados = [];
+        
+        if (tipo === 'total') filtrados = base;
+        else if (tipo === 'consulta') {
+            filtrados = base.filter(r => {
+                let d = getDiasConsulta(r);
+                if (valor.includes('Em dia')) return d !== null && d <= 365;
+                if (valor.includes('Atrasada')) return d !== null && d > 365;
+                return d === null;
+            });
+        }
+        else {
+            let chaves = [];
+            if (tipo === 'citologia') chaves = ['Citopatológico', 'Citologia', 'Papanicolau', 'Preventivo'];
+            if (tipo === 'hpv') chaves = ['HPV'];
+            if (tipo === 'mamografia') chaves = ['Mamografia', 'Mamográfico'];
+            
+            filtrados = base.filter(r => {
+                let status = checkRealizado(r, chaves);
+                return valor === 'Realizado' ? status : !status;
+            });
+        }
+        abrirModalComFiltro(filtrados, `Filtro: ${valor} (${tipo})`);
+    }
+
+    function abrirModalComFiltro(dados, titulo) {
+        pacientesAtuaisModal = dados;
+        document.getElementById('modalTitle').innerText = titulo;
+        document.getElementById('sortTabela').value = 'default';
+        document.getElementById('modalEmptyState').classList.add('hidden');
+        document.getElementById('modalTable').classList.remove('hidden');
+        document.getElementById('btnImprimirLista').classList.remove('hidden');
+        document.getElementById('controlesModal').classList.remove('hidden');
+        document.getElementById('pacientesModal').classList.remove('hidden');
+        ordenarTabelaModal();
+    }
+
+    function formatarDias(dias, maxBom) {
+        if (dias === null) return '<span class="text-gray-400 italic">Sem Registro</span>';
+        if (dias <= maxBom) return `<span class="text-emerald-600 font-bold">${dias} dias</span>`;
+        return `<span class="text-red-600 font-bold">${dias} dias</span>`;
+    }
+
+    function renderStatus(booleano) {
+        return booleano 
+            ? '<span class="px-2 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-full text-xs">Sim</span>'
+            : '<span class="px-2 py-1 bg-red-100 text-red-700 font-bold rounded-full text-xs">Não</span>';
+    }
+
+    function ordenarTabelaModal() {
+        const metodo = document.getElementById('sortTabela').value;
+        if (metodo === 'default') {
+            pacientesAtuaisModal.sort((a, b) => String(a['Nome']||'').localeCompare(String(b['Nome']||'')));
+        } else if (metodo === 'consulta_maior') {
+            pacientesAtuaisModal.sort((a, b) => (getDiasConsulta(b) ?? 9999) - (getDiasConsulta(a) ?? 9999));
+        }
+        
+        const tbody = document.getElementById('modalTableBody');
+        document.getElementById('modalSubtitle').innerText = `Total: ${pacientesAtuaisModal.length} paciente(s).`;
+        
+        tbody.innerHTML = pacientesAtuaisModal.map(p => {
+            let cito = checkRealizado(p, ['Citopatológico', 'Citologia', 'Papanicolau', 'Preventivo']);
+            let hpv = checkRealizado(p, ['HPV']);
+            let mamo = checkRealizado(p, ['Mamografia', 'Mamográfico']);
+            
+            return `
+                <tr class="border-b border-gray-100 hover:bg-rose-50 transition">
+                    <td class="p-4 font-medium text-gray-900">${p['Nome'] || '-'} <br><span class="text-xs text-gray-500">${p['Idade']||''}</span></td>
+                    <td class="p-4 text-center">${formatarDias(getDiasConsulta(p), 365)}</td>
+                    <td class="p-4 text-center">${renderStatus(cito)}</td>
+                    <td class="p-4 text-center">${renderStatus(hpv)}</td>
+                    <td class="p-4 text-center">${renderStatus(mamo)}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function fecharModal() { document.getElementById('pacientesModal').classList.add('hidden'); }
+
+    function imprimirLista() {
+        const titulo = document.getElementById('modalTitle').innerText;
+        const tabela = document.getElementById('modalTable').outerHTML;
+        const janela = window.open('', '_blank', 'width=1000,height=700');
+        janela.document.write(`
+            <html><head><title>Relatório - ${titulo}</title><style>
+            body{font-family:sans-serif;padding:20px;} h1{color:#881337;} 
+            table{width:100%;border-collapse:collapse;margin-top:20px;font-size:12px;}
+            th,td{border:1px solid #ddd;padding:8px;text-align:center;} th{background:#fff1f2;color:#881337;}
+            </style></head><body><h1>${titulo}</h1>${tabela}</body></html>
+        `);
+        janela.document.close(); janela.focus(); setTimeout(() => { janela.print(); janela.close(); }, 500);
+    }
+</script>
+</body>
+</html>

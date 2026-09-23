@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel ACS - Microáreas</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Papa Parse para ler CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- SheetJS (XLSX) para ler arquivos do Excel (.xlsx / .xls) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 16px; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 8px 12px rgba(0,0,0,0.08); }
+        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
+        .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #c7c7cc; border-radius: 4px; }
+    </style>
+</head>
+<body class="text-gray-800 relative antialiased">
+
+<div class="flex flex-col md:flex-row h-screen overflow-hidden">
+    <aside class="w-full md:w-64 bg-teal-800 text-white flex flex-row md:flex-col justify-between md:justify-start shadow-xl z-20">
+        <div class="p-4 md:p-6 text-xl md:text-2xl font-bold border-b border-teal-700 flex items-center justify-center w-full">
+            <i class="fas fa-clipboard-list mr-2 md:mr-3 text-emerald-300"></i> Painel ACS
+        </div>
+        <nav class="hidden md:flex flex-1 p-4 space-y-3 mt-4 flex-col">
+            <a href="index.html" class="flex items-center p-3 bg-indigo-800 rounded-lg text-white font-medium">
+                Home
+            </a>
+            <a href="Gestantes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Gestantes
+            </a>
+            <a href="Infantil.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+               Crianças
+            </a>
+            <a href="Diabeticos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Diabéticos
+            </a>
+            <a href="Hipertensos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Hipertensos
+            </a>
+            <a href="Mulher.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Mulher
+            </a>
+            <a href="Idosos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Idosos
+            </a>
+            <a href="agentes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                ACS
+            </a>
+            <a href="odonto.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Odonto
+            </a>
+        </nav>
+        <div class="hidden md:block p-4 text-xs text-teal-300 text-center border-t border-teal-700">
+            José Danyel Siqueira do Nascimento
+        </div>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-3 sm:p-4 md:p-8 relative" id="resumo">
+        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-3">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Acompanhamento Territorial</h1>
+                <p class="text-xs md:text-sm text-gray-500 mt-0.5">Monitoramento de pacientes, visitas e prioridades por microárea.</p>
+                <p id="statusDados" class="text-[11px] text-gray-400 mt-1">Nenhuma planilha carregada.</p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <button onclick="baixarModeloCSV()" class="hidden bg-white text-teal-700 border border-teal-200 px-4 py-2.5 rounded-lg hover:bg-teal-50 transition shadow flex items-center justify-center text-sm font-medium">
+                    <i class="fas fa-download mr-2"></i> Modelo CSV
+                </button>
+                <button onclick="limparDados()" class="bg-gray-100 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-200 transition shadow flex items-center justify-center text-sm font-medium">
+                    <i class="fas fa-eraser mr-2"></i> Limpar
+                </button>
+                <button id="btnAtualizarDrive" onclick="atualizarDaPlanilha()" class="bg-white text-blue-700 border border-blue-200 px-4 py-2.5 rounded-lg hover:bg-blue-50 transition shadow flex items-center justify-center text-sm font-medium">
+                    <i class="fas fa-rotate mr-2"></i> Atualizar
+                </button>
+                <div class="file-upload-wrapper sm:w-auto">
+                    <button class="w-full sm:w-auto bg-teal-600 text-white px-4 py-2.5 rounded-lg hover:bg-teal-700 transition shadow flex items-center justify-center cursor-pointer text-sm font-medium">
+                        <i class="fas fa-file-excel mr-2"></i> Carregar Planilha (CSV / XLSX)
+                    </button>
+                    <input type="file" id="csvFileInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+                </div>
+            </div>
+        </header>
+
+        <div id="avisoColunas" class="hidden mt-3 mb-4 p-3 rounded-lg border text-sm"></div>
+
+        <div class="card mb-4 md:mb-6 border border-teal-100">
+            <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+                <div class="relative flex-1">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <input id="buscaPaciente" type="search" placeholder="Buscar paciente por nome..."
+                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-teal-200 focus:border-teal-500 text-sm"
+                           oninput="buscarPaciente(this.value)">
+                </div>
+                <button onclick="abrirResultadosBusca()" class="bg-teal-50 text-teal-800 border border-teal-200 px-4 py-2.5 rounded-lg hover:bg-teal-100 text-sm font-semibold">
+                    <i class="fas fa-list mr-1"></i> Resultados
+                </button>
+            </div>
+            <div id="resultadoBusca" class="hidden mt-3"></div>
+        </div>
+
+        <div class="bg-white p-3 sm:p-4 rounded-xl shadow-sm mb-4 md:mb-6 border border-teal-100">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2"><i class="fas fa-filter mr-1"></i> Filtrar por Microárea:</p>
+            <div id="microareaButtonsContainer" class="flex flex-wrap gap-2">
+                <span class="text-xs sm:text-sm text-gray-500 italic">Carregue a planilha para ver as microáreas...</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-5 mb-6">
+            <div class="card border-l-4 border-blue-500 flex items-center justify-between">
+                <div><p class="text-[10px] md:text-sm text-gray-500 font-semibold mb-1 uppercase">Total</p><h2 id="kpi-total" class="text-xl md:text-3xl font-bold">0</h2></div>
+                <div class="hidden sm:block p-3 bg-blue-50 rounded-full text-blue-500"><i class="fas fa-users text-xl"></i></div>
+            </div>
+            <div class="card border-l-4 border-emerald-500 flex items-center justify-between">
+                <div><p class="text-[10px] md:text-sm text-gray-500 font-semibold mb-1 uppercase">Em dia</p><h2 id="kpi-em-dia" class="text-xl md:text-3xl font-bold">0</h2></div>
+                <div class="hidden sm:block p-3 bg-emerald-50 rounded-full text-emerald-500"><i class="fas fa-circle-check text-xl"></i></div>
+            </div>
+            <div class="card border-l-4 border-yellow-500 flex items-center justify-between cursor-pointer" onclick="abrirModalFiltro('Atenção','visita')">
+                <div><p class="text-[10px] md:text-sm text-gray-500 font-semibold mb-1 uppercase">Atenção</p><h2 id="kpi-atencao" class="text-xl md:text-3xl font-bold">0</h2></div>
+                <div class="hidden sm:block p-3 bg-yellow-50 rounded-full text-yellow-500"><i class="fas fa-eye text-xl"></i></div>
+            </div>
+            <div class="card border-l-4 border-orange-500 flex items-center justify-between cursor-pointer" onclick="abrirModalFiltro('Atrasada','visita')">
+                <div>
+                    <p class="text-[10px] md:text-sm text-orange-600 font-semibold uppercase">Atrasadas</p>
+                    <p class="text-[10px] text-gray-400 font-normal">Visita &gt; 30d até 180d</p>
+                    <h2 id="kpi-pendentes" class="text-xl md:text-3xl font-bold mt-0.5">0</h2>
+                </div>
+                <div class="hidden sm:block p-3 bg-orange-50 rounded-full text-orange-500"><i class="fas fa-person-walking text-xl"></i></div>
+            </div>
+            <div class="card border-l-4 border-red-500 flex items-center justify-between cursor-pointer" onclick="abrirModalFiltro('Crítica','visita')">
+                <div>
+                    <p class="text-[10px] md:text-sm text-red-600 font-semibold uppercase">Críticas</p>
+                    <p class="text-[10px] text-gray-400 font-normal">Visita &gt; 180d ou s/ reg.</p>
+                    <h2 id="kpi-criticas" class="text-xl md:text-3xl font-bold mt-0.5">0</h2>
+                </div>
+                <div class="hidden sm:block p-3 bg-red-50 rounded-full text-red-500"><i class="fas fa-triangle-exclamation text-xl"></i></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            <div class="card cursor-pointer hover:bg-gray-50 transition" onclick="abrirModalSemRegistro()">
+                <p class="text-xs text-gray-500 font-semibold uppercase">Sem registro</p>
+                <p class="text-[10px] text-gray-400 font-normal">Sem data de visita informada</p>
+                <h3 id="kpi-sem-registro" class="text-2xl font-bold text-gray-700 mt-1">0</h3>
+            </div>
+            <div class="card">
+                <p class="text-xs text-gray-500 font-semibold uppercase">Cobertura de visitas</p>
+                <p class="text-[10px] text-gray-400 font-normal">Visitas em dia (&lt; 30 dias)</p>
+                <h3 id="kpi-cobertura" class="text-2xl font-bold text-teal-700 mt-1">0%</h3>
+            </div>
+            <div class="card cursor-pointer hover:bg-gray-50 transition" onclick="abrirModalSemConsulta()">
+                <p class="text-xs text-gray-500 font-semibold uppercase">Sem consulta &gt; 3m</p>
+                <p class="text-[10px] text-gray-400 font-normal">Atendimento médico &gt; 90d</p>
+                <h3 id="kpi-consulta" class="text-2xl font-bold text-orange-600 mt-1">0</h3>
+            </div>
+            <div class="card">
+                <p class="text-xs text-gray-500 font-semibold uppercase">Dados incompletos</p>
+                <p class="text-[10px] text-gray-400 font-normal">Campos essenciais vazios</p>
+                <h3 id="kpi-incompletos" class="text-2xl font-bold text-gray-600 mt-1">0</h3>
+            </div>
+        </div>
+
+        <h3 id="graficos" class="text-lg md:text-xl font-bold text-gray-800 mb-3 flex items-center">
+            <i class="fas fa-chart-column mr-2 text-teal-600"></i> Painéis Analíticos
+            <span class="text-xs font-normal text-gray-500 ml-2">(Clique nas barras para abrir listas)</span>
+        </h3>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
+            <div class="card cursor-pointer">
+                <h3 class="text-sm md:text-md font-bold text-gray-700 mb-2 text-center">Situação das Visitas</h3>
+                <div class="relative h-64 sm:h-72 md:h-80 w-full"><canvas id="visitasChart"></canvas></div>
+            </div>
+            <div class="card cursor-pointer">
+                <h3 class="text-sm md:text-md font-bold text-gray-700 mb-2 text-center">Distribuição por Faixa Etária</h3>
+                <div class="relative h-64 sm:h-72 md:h-80 w-full"><canvas id="ageChart"></canvas></div>
+            </div>
+        </div>
+
+        <section id="ranking" class="card mb-6">
+            <h3 class="text-lg font-bold text-gray-800 mb-1"><i class="fas fa-ranking-star mr-2 text-teal-600"></i> Ranking das Microáreas</h3>
+            <p class="text-xs text-gray-500 mb-4">A cobertura considera pacientes com visita há menos de 30 dias.</p>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm min-w-[680px]">
+                    <thead class="bg-teal-50 text-teal-900 uppercase text-[11px]">
+                        <tr>
+                            <th class="p-3 text-left">Microárea</th><th class="p-3 text-center">Pacientes</th>
+                            <th class="p-3 text-center">Em dia</th><th class="p-3 text-center">Atrasadas</th>
+                            <th class="p-3 text-center">Críticas</th><th class="p-3 text-center">Cobertura</th>
+                            <th class="p-3 text-center">Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankingBody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="prioridades" class="card mb-8">
+            <div class="flex flex-col sm:flex-row justify-between gap-2 mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-800"><i class="fas fa-triangle-exclamation mr-2 text-red-500"></i> Lista de Prioridades</h3>
+                    <p class="text-xs text-gray-500">Pacientes ordenados pelo maior tempo sem visita.</p>
+                </div>
+                <button onclick="abrirModalPrioridades()" class="bg-red-50 text-red-700 border border-red-200 px-3 py-2 rounded-lg text-sm font-semibold hover:bg-red-100">Ver lista completa</button>
+            </div>
+            <div id="prioridadesResumo" class="text-sm text-gray-500">Carregue uma planilha para gerar as prioridades.</div>
+        </section>
+    </main>
+</div>
+
+<div id="pacientesModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[92vh] flex flex-col overflow-hidden">
+        <div class="p-3 sm:p-5 border-b border-gray-200 bg-teal-50 flex flex-col gap-3">
+            <div class="flex justify-between items-start">
+                <div><h2 class="text-lg sm:text-2xl font-bold text-teal-900 leading-tight" id="modalTitle">Pacientes</h2><p class="text-xs sm:text-sm text-gray-600 mt-0.5" id="modalSubtitle">Carregando...</p></div>
+                <button onclick="fecharModal()" class="text-gray-500 hover:text-red-500 p-1"><i class="fas fa-times fa-lg"></i></button>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2 pt-2 border-t border-teal-100">
+                <select id="sortTabela" onchange="ordenarTabelaModal()" class="text-xs sm:text-sm border border-gray-300 rounded-md p-2 bg-white flex-1">
+                    <option value="default">Por Nome (A-Z)</option><option value="visita_maior">Maior tempo s/ Visita</option><option value="consulta_maior">Maior tempo s/ Consulta</option>
+                </select>
+                <select id="unidadeTempo" onchange="ordenarTabelaModal()" class="text-xs sm:text-sm border border-gray-300 rounded-md p-2 bg-white">
+                    <option value="dias">Dias</option><option value="meses">Meses</option>
+                </select>
+                <button onclick="imprimirLista()" class="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 text-sm font-medium"><i class="fas fa-print mr-2"></i> Imprimir</button>
+            </div>
+        </div>
+        <div class="p-0 flex-1 overflow-auto bg-white">
+            <div id="modalEmptyState" class="hidden p-8 text-center text-gray-500"><i class="fas fa-file-csv fa-3x mb-3 text-gray-300"></i><p>Carregue a planilha para gerar a lista.</p></div>
+            <div class="overflow-x-auto">
+                <table id="modalTable" class="w-full text-left border-collapse min-w-[850px]">
+                    <thead class="bg-teal-100 text-teal-900 sticky top-0 z-10 shadow-sm text-[11px] uppercase font-bold">
+                        <tr><th class="p-3 border-b">Nome</th><th class="p-3 border-b">Microárea</th><th class="p-3 border-b">Idade</th><th class="p-3 border-b text-center">Tempo s/ Visita</th><th class="p-3 border-b text-center">Tempo s/ Consulta</th><th class="p-3 border-b text-center">Peso</th><th class="p-3 border-b text-center">Altura</th><th class="p-3 border-b text-center">Situação</th></tr>
+                    </thead>
+                    <tbody id="modalTableBody" class="text-xs sm:text-sm text-gray-700 divide-y divide-gray-100"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="p-3 border-t border-gray-200 bg-gray-50 flex justify-end"><button onclick="fecharModal()" class="bg-gray-200 text-gray-800 px-5 py-2 rounded-lg hover:bg-gray-300 text-sm font-medium">Fechar</button></div>
+    </div>
+</div>
+
+<script>
+let dadosBrutosCSV = [], pacientesAtuaisModal = [], tipoFiltroAtivo = '', microareaSelecionada = 'TODAS', resultadosBusca = [];
+let charts = {};
+
+Chart.defaults.font.family = 'Inter';
+const chartOptions = { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, animation:{duration:400} };
+
+function initCharts(){
+    charts.visitasChart = new Chart(document.getElementById('visitasChart'), {
+        type:'bar',
+        data:{labels:['Em dia','Atenção','Atrasada','Crítica'],datasets:[{data:[0,0,0,0],backgroundColor:['#10b981','#eab308','#f59e0b','#ef4444'],borderRadius:4}]},
+        options:{...chartOptions,onClick:(e,el,c)=>{if(el.length) abrirModalFiltro(c.data.labels[el[0].index],'visita');}}
+    });
+    charts.ageChart = new Chart(document.getElementById('ageChart'), {
+        type:'bar',
+        data:{labels:['0-2a','3-5a','6-10a','11-14a','15-30a','31-60a','+60a','Não informado'],datasets:[{data:[0,0,0,0,0,0,0,0],backgroundColor:'#0d9488',borderRadius:4}]},
+        options:{...chartOptions,onClick:(e,el,c)=>{if(el.length) abrirModalFiltro(c.data.labels[el[0].index],'idade');}}
+    });
+}
+initCharts();
+carregarDadosLocalStorage();
+
+function normalizarNumero(v){
+    if(v===null || v===undefined || String(v).trim()==='' || String(v).trim()==='-') return null;
+    const n=parseInt(String(v).replace(',', '.'),10);
+    return Number.isFinite(n)?n:null;
+}
+function extractAge(v){
+    if(v===null || v===undefined) return null;
+    const s=String(v).trim().toLowerCase();
+    if(s==='' || s==='-') return null;
+    let m=s.match(/(\d+)\s*anos?\b/); if(m) return parseInt(m[1]);
+    m=s.match(/(\d+)\s*a\b/); if(m) return parseInt(m[1]);
+    m=s.match(/(\d+)\s*(meses?|dias?)\b/); if(m) return 0;
+    m=s.match(/(\d+)\s*m\b/); if(m) return 0;
+    m=s.match(/^(\d+)$/); if(m) return parseInt(m[1]);
+    return null;
+}
+function getAgeCategory(age){
+    if(age===null) return 'Não informado';
+    if(age<=2) return '0-2a'; if(age<=5) return '3-5a'; if(age<=10) return '6-10a';
+    if(age<=14) return '11-14a'; if(age<=30) return '15-30a'; if(age<=60) return '31-60a'; return '+60a';
+}
+
+function getDiasVisita(row){
+    const dias=normalizarNumero(row['Dias desde a última visita domiciliar']);
+    if(dias!==null) return dias;
+    const meses=normalizarNumero(row['Meses desde a última visita domiciliar']);
+    if(meses!==null) return meses*30;
+    return null;
+}
+function getDiasConsulta(row){
+    const dias=normalizarNumero(row['Dias desde o último atendimento médico']);
+    if(dias!==null) return dias;
+    const meses=normalizarNumero(row['Meses desde o último atendimento médico']);
+    if(meses!==null) return meses*30;
+    return null;
+}
+function situacaoVisita(row){
+    const d=getDiasVisita(row);
+    if(d===null) return 'Crítica';
+    if(d<30) return 'Em dia';
+    if(d===30) return 'Atenção';
+    if(d<=180) return 'Atrasada';
+    return 'Crítica';
+}
+function escapeHTML(value){
+    return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&gt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function formatTempo(dias,unidade){
+    if(dias===null) return 'Sem reg.';
+    return unidade==='meses' ? `${Math.floor(dias/30)} mês(es)` : `${dias} dia(s)`;
+}
+function getFiltrados(){
+    return dadosBrutosCSV.filter(row=>microareaSelecionada==='TODAS' || String(row['Microárea']||'').trim()===microareaSelecionada);
+}
+
+function decodeCSVBuffer(buffer){
+    const utf8 = new TextDecoder('utf-8',{fatal:false}).decode(buffer);
+    const temCaractereInvalido = utf8.indexOf('\uFFFD')!==-1;
+    const pareceMojibake = /Ã[\u0080-\u00BF]/.test(utf8) || /Â[ºª°]/.test(utf8);
+    if(temCaractereInvalido || pareceMojibake){
+        return {texto:new TextDecoder('iso-8859-1').decode(buffer), encoding:'ISO-8859-1 (detectado)'};
+    }
+    return {texto:utf8, encoding:'UTF-8 (detectado)'};
+}
+
+// Leitor unificado para arquivos CSV e Excel (.xlsx)
+document.getElementById('csvFileInput').addEventListener('change', e => {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    const nomeArquivo = file.name.toLowerCase();
+
+    if(nomeArquivo.endsWith('.xlsx') || nomeArquivo.endsWith('.xls')){
+        reader.onload = ev => {
+            try {
+                const data = new Uint8Array(ev.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonResult = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
+                
+                processarDadosBrutos(jsonResult, file.name, 'Excel (XLSX)');
+            } catch(err) {
+                alert('Erro ao ler a planilha Excel: ' + err.message);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        reader.onload = ev => {
+            const {texto, encoding} = decodeCSVBuffer(ev.target.result);
+            Papa.parse(texto, {
+                header: true, 
+                skipEmptyLines: true, 
+                complete: results => {
+                    processarDadosBrutos(results.data, file.name, encoding);
+                }, 
+                error: err => alert('Não foi possível ler a planilha CSV: ' + err.message)
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    }
+});
+
+const COLUNAS_ESSENCIAIS=['Nome','Microárea','Idade'];
+const COLUNAS_VISITA=['Dias desde a última visita domiciliar','Meses desde a última visita domiciliar'];
+const COLUNAS_CONSULTA=['Dias desde o último atendimento médico','Meses desde o último atendimento médico'];
+
+function processarDadosBrutos(dataArray, nomeArquivo, encoding){
+    if(!dataArray.length){
+        alert('A planilha está vazia.');
+        return;
+    }
+    // Descobrir as chaves/colunas da primeira linha para validação
+    const colunas = Object.keys(dataArray[0] || {});
+    const faltandoEssenciais = COLUNAS_ESSENCIAIS.filter(c => !colunas.includes(c));
+    const faltaVisita = !COLUNAS_VISITA.some(c => colunas.includes(c));
+    const faltaConsulta = !COLUNAS_CONSULTA.some(c => colunas.includes(c));
+
+    dadosBrutosCSV = dataArray.filter(r => Object.values(r).some(v => String(v??'').trim() !== ''));
+    gerarBotoesMicroarea(); 
+    processAndUpdateDashboard();
+    exibirAvisoColunas(faltandoEssenciais, faltaVisita, faltaConsulta);
+    document.getElementById('statusDados').textContent = `${nomeArquivo} • ${dadosBrutosCSV.length.toLocaleString('pt-BR')} registros • ${encoding} • atualizado em ${new Date().toLocaleString('pt-BR')}`;
+    salvarDadosLocalStorage(nomeArquivo, encoding);
+}
+
+function exibirAvisoColunas(faltandoEssenciais,faltaVisita,faltaConsulta){
+    const el=document.getElementById('avisoColunas');
+    const msgs=[];
+    if(faltandoEssenciais.length) msgs.push(`Colunas obrigatórias não encontradas: <strong>${faltandoEssenciais.map(escapeHTML).join(', ')}</strong>. Confira se os nomes das colunas (com acentos) batem exatamente com o modelo.`);
+    if(faltaVisita) msgs.push('Nenhuma coluna de "Dias/Meses desde a última visita domiciliar" encontrada — todos os pacientes aparecerão como "Crítica" (sem registro de visita).');
+    if(faltaConsulta) msgs.push('Nenhuma coluna de "Dias/Meses desde o último atendimento médico" encontrada — o indicador "Sem consulta > 3m" ficará zerado.');
+    if(!msgs.length){el.classList.add('hidden');el.innerHTML='';return}
+    const grave=faltandoEssenciais.length>0;
+    el.className=`mt-3 mb-4 p-3 rounded-lg border text-sm ${grave?'bg-red-50 border-red-200 text-red-800':'bg-yellow-50 border-yellow-200 text-yellow-800'}`;
+    el.innerHTML=`<i class="fas fa-triangle-exclamation mr-2"></i>${msgs.join('<br>')}`;
+}
+function esconderAvisoColunas(){const el=document.getElementById('avisoColunas');el.classList.add('hidden');el.innerHTML=''}
+
+const ARQUIVO_LOCAL = 'plan 01.xlsx';
+
+async function atualizarDaPlanilha(silencioso){
+    const btn = document.getElementById('btnAtualizarDrive');
+    const textoOriginal = btn ? btn.innerHTML : '';
+    if(btn){ btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Atualizando...'; }
+    try{
+        const resposta = await fetch(encodeURI(ARQUIVO_LOCAL), {cache: 'no-store'});
+        if(!resposta.ok) throw new Error('HTTP ' + resposta.status);
+        const buffer = await resposta.arrayBuffer();
+        const workbook = XLSX.read(buffer, {type: 'array'});
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonResult = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
+        processarDadosBrutos(jsonResult, ARQUIVO_LOCAL, 'Excel (XLSX) - atualização automática');
+    }catch(err){
+        console.warn('Falha ao atualizar da planilha local:', err);
+        if(!silencioso){
+            alert('Não foi possível carregar "' + ARQUIVO_LOCAL + '" automaticamente.\n\nIsso costuma acontecer quando o arquivo HTML é aberto com duplo clique (file://) em vez de por um servidor local. Consulte as instruções para rodar um servidor local, ou carregue o arquivo manualmente pelo botão "Carregar Planilha".');
+        }
+    }finally{
+        if(btn){ btn.disabled = false; btn.innerHTML = textoOriginal; }
+    }
+}
+
+atualizarDaPlanilha(true); // tenta carregar "plan 01.xlsx" automaticamente ao abrir a página (silencioso: não mostra alerta se falhar)
+
+function baixarModeloCSV(){
+    const cabecalhos=['Nome','Microárea','Idade','Dias desde a última visita domiciliar','Dias desde o último atendimento médico','Última medição de peso','Última medição de altura'];
+    const exemplo=['Maria da Silva','1','34 anos','12','45','62 kg','1,60 m'];
+    const csv=cabecalhos.join(';')+'\n'+exemplo.join(';');
+    const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='modelo_painel_acs.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function salvarDadosLocalStorage(nomeArquivo,encoding){
+    try{
+        localStorage.setItem('painelACS_dados',JSON.stringify({dados:dadosBrutosCSV,nomeArquivo,encoding,salvoEm:new Date().toISOString()}));
+    }catch(e){ console.warn('Não foi possível salvar os dados localmente:',e); }
+}
+function carregarDadosLocalStorage(){
+    try{
+        const raw=localStorage.getItem('painelACS_dados');
+        if(!raw) return false;
+        const salvo=JSON.parse(raw);
+        if(!salvo.dados || !salvo.dados.length) return false;
+        dadosBrutosCSV=salvo.dados;
+        gerarBotoesMicroarea(); processAndUpdateDashboard();
+        const dataFormatada=new Date(salvo.salvoEm).toLocaleString('pt-BR');
+        document.getElementById('statusDados').textContent=`${salvo.nomeArquivo} • ${dadosBrutosCSV.length.toLocaleString('pt-BR')} registros • ${salvo.encoding||''} • dados salvos localmente em ${dataFormatada}`;
+        return true;
+    }catch(e){ console.warn('Não foi possível restaurar dados salvos:',e); return false; }
+}
+
+function limparDados(){
+    if(!dadosBrutosCSV.length) return;
+    if(!confirm('Deseja limpar os dados carregados?')) return;
+    dadosBrutosCSV=[]; microareaSelecionada='TODAS'; resultadosBusca=[];
+    document.getElementById('csvFileInput').value=''; document.getElementById('microareaButtonsContainer').innerHTML='<span class="text-sm text-gray-500 italic">Carregue a planilha...</span>';
+    document.getElementById('statusDados').textContent='Nenhuma planilha carregada.';
+    esconderAvisoColunas();
+    try{ localStorage.removeItem('painelACS_dados'); }catch(e){}
+    processAndUpdateDashboard();
+}
+function gerarBotoesMicroarea(){
+    const set=new Set();
+    dadosBrutosCSV.forEach(r=>{const ma=String(r['Microárea']||'').trim();if(ma&&ma!=='-')set.add(ma)});
+    const c=document.getElementById('microareaButtonsContainer');
+    c.innerHTML='';
+
+    const btnTodas=document.createElement('button');
+    btnTodas.id='btn-ma-TODAS';
+    btnTodas.className='ma-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition bg-teal-700 text-white shadow-sm';
+    btnTodas.innerHTML='<i class="fas fa-globe mr-1"></i> Todas (Geral)';
+    btnTodas.addEventListener('click',()=>filtrarPorMicroarea('TODAS'));
+    c.appendChild(btnTodas);
+
+    [...set].sort((a,b)=>(parseInt(a)-parseInt(b))||a.localeCompare(b)).forEach(ma=>{
+        const id='btn-ma-'+ma.replace(/[^a-zA-Z0-9_-]/g,'_');
+        const btn=document.createElement('button');
+        btn.id=id;
+        btn.className='ma-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition bg-white text-teal-800 border border-teal-200 hover:bg-teal-50 shadow-sm';
+        btn.innerHTML=`<i class="fas fa-map-marker-alt mr-1"></i> Microárea ${escapeHTML(ma)}`;
+        btn.addEventListener('click',()=>filtrarPorMicroarea(ma));
+        c.appendChild(btn);
+    });
+}
+function filtrarPorMicroarea(ma){
+    microareaSelecionada=ma;
+    document.querySelectorAll('.ma-btn').forEach(b=>{b.classList.remove('bg-teal-700','text-white');b.classList.add('bg-white','text-teal-800','border-teal-200')});
+    const id='btn-ma-'+ma.replace(/[^a-zA-Z0-9_-]/g,'_'); const b=document.getElementById(id);
+    if(b){b.classList.remove('bg-white','text-teal-800','border-teal-200');b.classList.add('bg-teal-700','text-white')}
+    processAndUpdateDashboard();
+}
+function processAndUpdateDashboard(){
+    const dados=getFiltrados(), total=dados.length;
+    const counts={'Em dia':0,'Atenção':0,'Atrasada':0,'Crítica':0};
+    const age={'0-2a':0,'3-5a':0,'6-10a':0,'11-14a':0,'15-30a':0,'31-60a':0,'+60a':0,'Não informado':0};
+    let semConsulta=0,incompletos=0,semRegistro=0;
+    dados.forEach(r=>{
+        counts[situacaoVisita(r)]++;
+        if(getDiasVisita(r)===null) semRegistro++;
+        age[getAgeCategory(extractAge(r['Idade']))]++;
+        if((getDiasConsulta(r)??Infinity)>90) semConsulta++;
+        const campos=['Nome','Microárea','Idade'];
+        if(campos.some(c=>!String(r[c]??'').trim() || String(r[c]).trim()==='-')) incompletos++;
+    });
+    const cobertura=total?((counts['Em dia']/total)*100):0;
+    setText('kpi-total',total.toLocaleString('pt-BR')); setText('kpi-em-dia',counts['Em dia']);
+    setText('kpi-atencao',counts['Atenção']); setText('kpi-pendentes',counts['Atrasada']);
+    setText('kpi-criticas',counts['Crítica']); setText('kpi-sem-registro',semRegistro);
+    setText('kpi-cobertura',cobertura.toFixed(1)+'%'); setText('kpi-consulta',semConsulta); setText('kpi-incompletos',incompletos);
+    charts.visitasChart.data.datasets[0].data=[counts['Em dia'],counts['Atenção'],counts['Atrasada'],counts['Crítica']]; charts.visitasChart.update();
+    charts.ageChart.data.datasets[0].data=Object.values(age); charts.ageChart.update();
+    renderRanking(); renderPrioridades();
+}
+function setText(id,v){document.getElementById(id).textContent=v}
+
+function estatisticaMA(ma){
+    const rows=dadosBrutosCSV.filter(r=>String(r['Microárea']||'').trim()===ma);
+    const c={'Em dia':0,'Atenção':0,'Atrasada':0,'Crítica':0};
+    rows.forEach(r=>c[situacaoVisita(r)]++);
+    return {ma,total:rows.length,emDia:c['Em dia'],atrasadas:c['Atrasada'],criticas:c['Crítica'],cobertura:rows.length?(c['Em dia']/rows.length)*100:0};
+}
+function classeSituacao(p){return p>=90?'Boa':p>=75?'Atenção':p>=60?'Alerta':'Crítica'}
+function renderRanking(){
+    const mas=[...new Set(dadosBrutosCSV.map(r=>String(r['Microárea']||'').trim()).filter(Boolean))];
+    mas.sort((a,b)=>estatisticaMA(b).cobertura-estatisticaMA(a).cobertura);
+    document.getElementById('rankingBody').innerHTML=mas.length?mas.map(ma=>{
+        const x=estatisticaMA(ma), sit=classeSituacao(x.cobertura);
+        const badge=sit==='Boa'?'bg-emerald-100 text-emerald-700':sit==='Atenção'?'bg-yellow-100 text-yellow-700':sit==='Alerta'?'bg-orange-100 text-orange-700':'bg-red-100 text-red-700';
+        return `<tr class="border-b hover:bg-teal-50"><td class="p-3 font-semibold">Microárea ${escapeHTML(ma)}</td><td class="p-3 text-center">${x.total}</td><td class="p-3 text-center text-emerald-700 font-semibold">${x.emDia}</td><td class="p-3 text-center text-orange-600 font-semibold">${x.atrasadas}</td><td class="p-3 text-center text-red-600 font-semibold">${x.criticas}</td><td class="p-3 text-center font-bold">${x.cobertura.toFixed(1)}%</td><td class="p-3 text-center"><span class="px-2 py-1 rounded-full text-[11px] font-bold ${badge}">${sit}</span></td></tr>`;
+    }).join(''):'<tr><td colspan="7" class="p-6 text-center text-gray-400">Nenhum dado carregado.</td></tr>';
+}
+function renderPrioridades(){
+    const rows=getFiltrados().filter(r=>['Atrasada','Crítica'].includes(situacaoVisita(r))).sort((a,b)=>(getDiasVisita(b)??999999)-(getDiasVisita(a)??999999));
+    document.getElementById('prioridadesResumo').innerHTML=rows.length?`<div class="grid grid-cols-1 md:grid-cols-3 gap-3">${rows.slice(0,6).map(r=>`<div class="border border-gray-200 rounded-lg p-3"><div class="font-semibold text-gray-900">${escapeHTML(r['Nome']||'Sem nome')}</div><div class="text-xs text-gray-500 mt-1">Microárea ${escapeHTML(r['Microárea']||'-')} • ${formatTempo(getDiasVisita(r),'dias')}</div><div class="mt-2 text-xs font-bold ${situacaoVisita(r)==='Crítica'?'text-red-600':'text-orange-600'}">${situacaoVisita(r)}</div></div>`).join('')}</div>${rows.length>6?`<p class="text-xs text-gray-500 mt-3">+ ${rows.length-6} pacientes na lista completa.</p>`:''}`:'<div class="p-4 bg-emerald-50 text-emerald-700 rounded-lg">Nenhuma prioridade encontrada no filtro atual.</div>';
+}
+
+function abrirModalPendentes(){
+    const rows=getFiltrados().filter(r=>['Atrasada','Crítica'].includes(situacaoVisita(r))).sort((a,b)=>(getDiasVisita(b)??999999)-(getDiasVisita(a)??999999));
+    abrirModalComDados(rows,`[${microareaSelecionada==='TODAS'?'Geral':'Microárea '+microareaSelecionada}] Visitas que exigem atenção`);
+}
+function abrirModalSemRegistro(){
+    const rows=getFiltrados().filter(r=>getDiasVisita(r)===null).sort((a,b)=>String(a['Nome']||'').localeCompare(String(b['Nome']||'')));
+    abrirModalComDados(rows,`[${microareaSelecionada==='TODAS'?'Geral':'Microárea '+microareaSelecionada}] Pacientes sem registro de visita`);
+}
+function abrirModalSemConsulta(){
+    const rows=getFiltrados().filter(r=>(getDiasConsulta(r)??Infinity)>90).sort((a,b)=>(getDiasConsulta(b)??999999)-(getDiasConsulta(a)??999999));
+    abrirModalComDados(rows,`[${microareaSelecionada==='TODAS'?'Geral':'Microárea '+microareaSelecionada}] Pacientes sem consulta médica há mais de 3 meses (> 90 dias)`);
+}
+function abrirModalPrioridades(){abrirModalPendentes()}
+function abrirModalFiltro(valor,tipo){
+    let rows=getFiltrados();
+    if(tipo==='idade') rows=rows.filter(r=>getAgeCategory(extractAge(r['Idade']))===valor);
+    if(tipo==='visita') rows=rows.filter(r=>situacaoVisita(r)===valor);
+    abrirModalComDados(rows,`[${microareaSelecionada==='TODAS'?'Geral':'Microárea '+microareaSelecionada}] ${tipo==='idade'?'Faixa etária: ':'Situação: '}${valor}`);
+}
+function abrirResultadosBusca(){
+    if(!resultadosBusca.length){alert('Digite um nome para pesquisar.');return}
+    abrirModalComDados(resultadosBusca,'Resultado da busca');
+}
+function buscarPaciente(texto){
+    const q=texto.trim().toLowerCase();
+    if(q.length<2){resultadosBusca=[];document.getElementById('resultadoBusca').classList.add('hidden');return}
+    resultadosBusca=getFiltrados().filter(r=>String(r['Nome']||'').toLowerCase().includes(q)).slice(0,20);
+    const box=document.getElementById('resultadoBusca'); box.classList.remove('hidden');
+    box.innerHTML=resultadosBusca.length?`<div class="text-xs text-gray-500 mb-2">${resultadosBusca.length} resultado(s) • mostrando até 20</div><div class="flex flex-wrap gap-2">${resultadosBusca.map((r,i)=>`<button onclick="abrirModalComDados([resultadosBusca[${i}]],'Paciente')" class="px-3 py-2 bg-teal-50 border border-teal-100 rounded-lg text-xs font-semibold text-teal-800 hover:bg-teal-100">${escapeHTML(r['Nome']||'Sem nome')}</button>`).join('')}</div>`:'<div class="text-xs text-gray-500">Nenhum paciente encontrado.</div>';
+}
+function abrirModalComDados(rows,titulo){
+    tipoFiltroAtivo='lista'; pacientesAtuaisModal=[...rows];
+    document.getElementById('modalTitle').textContent=titulo; document.getElementById('sortTabela').value='default';
+    ordenarTabelaModal(); document.getElementById('pacientesModal').classList.remove('hidden');
+}
+function getTempo(row,coluna,unidade){
+    const dias=coluna==='visita'?getDiasVisita(row):getDiasConsulta(row);
+    return unidade==='meses'?(dias===null?null:dias/30):dias;
+}
+function ordenarTabelaModal(){
+    const metodo=document.getElementById('sortTabela').value, unidade=document.getElementById('unidadeTempo').value;
+    if(metodo==='default') pacientesAtuaisModal.sort((a,b)=>String(a['Nome']||'').localeCompare(String(b['Nome']||'')));
+    if(metodo==='visita_maior') pacientesAtuaisModal.sort((a,b)=>(getDiasVisita(b)??999999)-(getDiasVisita(a)??999999));
+    if(metodo==='consulta_maior') pacientesAtuaisModal.sort((a,b)=>(getDiasConsulta(b)??999999)-(getDiasConsulta(a)??999999));
+    renderizarTabelaModal(unidade);
+}
+function renderizarTabelaModal(unidade){
+    document.getElementById('modalSubtitle').textContent=`Total de ${pacientesAtuaisModal.length} paciente(s).`;
+    document.getElementById('modalTableBody').innerHTML=pacientesAtuaisModal.map(p=>{
+        const sit=situacaoVisita(p), cls=sit==='Crítica'?'text-red-700 bg-red-50':sit==='Atrasada'?'text-orange-700 bg-orange-50':sit==='Atenção'?'text-yellow-700 bg-yellow-50':sit==='Em dia'?'text-emerald-700 bg-emerald-50':'text-gray-500 bg-gray-50';
+        return `<tr class="hover:bg-teal-50"><td class="p-3 font-medium">${escapeHTML(p['Nome']||'Sem Nome')}</td><td class="p-3">${escapeHTML(p['Microárea']||'-')}</td><td class="p-3">${escapeHTML(p['Idade']||'-')}</td><td class="p-3 text-center font-semibold">${formatTempo(getDiasVisita(p),unidade)}</td><td class="p-3 text-center">${formatTempo(getDiasConsulta(p),unidade)}</td><td class="p-3 text-center">${escapeHTML(p['Última medição de peso']||'-')}</td><td class="p-3 text-center">${escapeHTML(p['Última medição de altura']||'-')}</td><td class="p-3 text-center"><span class="px-2 py-1 rounded-full text-[10px] font-bold ${cls}">${sit}</span></td></tr>`;
+    }).join('');
+}
+function fecharModal(){document.getElementById('pacientesModal').classList.add('hidden')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')fecharModal()});
+document.getElementById('pacientesModal').addEventListener('click',e=>{if(e.target.id==='pacientesModal')fecharModal()});
+
+function imprimirLista(){
+    const titulo=document.getElementById('modalTitle').textContent, tabela=document.getElementById('modalTable').outerHTML;
+    const w=window.open('','_blank'); if(!w){alert('Permita pop-ups para imprimir o relatório.');return}
+    w.document.write(`<html><head><title>Relatório - ${escapeHTML(titulo)}</title><style>
+    body{font-family:Arial,sans-serif;padding:20px;color:#111}h1{font-size:20px;color:#0f766e;margin:0 0 4px}p{font-size:11px;color:#666}
+    table{width:100%;border-collapse:collapse;margin-top:18px;font-size:9px}th,td{border:1px solid #aaa;padding:5px}th{background:#f0fdfa;text-align:center}
+    @media print{body{padding:0}@page{size:A4 landscape;margin:10mm}}
+    </style></head><body><h1>Relatório de Acompanhamento Territorial</h1><p>${escapeHTML(titulo)} • Emitido em ${new Date().toLocaleString('pt-BR')}</p>${tabela}</body></html>`);
+    w.document.close();w.focus();setTimeout(()=>{w.print();w.close()},400);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Saúde - Odontológico</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Papa Parse para ler CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- SheetJS (XLSX) para ler arquivos do Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
+        .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="text-gray-800 relative">
+
+<div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-cyan-900 text-white flex-col transition-all duration-300 hidden md:flex shadow-xl overflow-y-auto z-20">
+        <div class="p-6 text-2xl font-bold border-b border-cyan-800 text-center flex items-center justify-center">
+            <i class="fas fa-tooth mr-3 text-cyan-300"></i> PSF 1
+        </div>
+        <nav class="flex-1 p-4 space-y-3 mt-4">
+             <a href="index.html" class="flex items-center p-3 bg-indigo-800 rounded-lg text-white font-medium">
+                Home
+            </a>
+            <a href="Gestantes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Gestantes
+            </a>
+            <a href="Infantil.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+               Crianças
+            </a>
+            <a href="Diabeticos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Diabéticos
+            </a>
+            <a href="Hipertensos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Hipertensos
+            </a>
+            <a href="Mulher.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Mulher
+            </a>
+            <a href="Idosos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Idosos
+            </a>
+            <a href="agentes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                ACS
+            <a href="odonto.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Odonto
+            </a>
+        </nav>
+        <div class="p-4 text-xs text-cyan-300 text-center border-t border-cyan-800">
+            José Danyel Siqueira do Nascimento
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Acompanhamento Odontológico</h1>
+                <p class="text-gray-500 mt-1 text-sm md:text-base">Monitoramento de Primeiras Consultas, Tratamentos, ART, Escovação, Exodontias e Preventivos.</p>
+            </div>
+            
+            <div class="flex items-center gap-2 flex-wrap">
+                <button onclick="limparDadosLocais()" class="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
+                    <i class="fas fa-eraser mr-2"></i> Limpar Dados
+                </button>
+                <div class="file-upload-wrapper">
+                    <button class="bg-cyan-600 text-white px-5 py-2.5 rounded-lg hover:bg-cyan-700 transition shadow flex items-center cursor-pointer text-sm font-medium">
+                        <i class="fas fa-file-excel mr-2"></i> Carregar Planilha
+                    </button>
+                    <input type="file" id="csvFileInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+                </div>
+            </div>
+        </header>
+
+        <!-- Barra de Busca -->
+        <div class="card mb-4 border border-cyan-100 p-4">
+            <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+                <div class="relative flex-1">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <input id="buscaPaciente" type="search" placeholder="Buscar paciente por nome..."
+                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 text-sm"
+                           oninput="buscarPaciente(this.value)">
+                </div>
+                <button onclick="abrirResultadosBusca()" class="bg-cyan-50 text-cyan-800 border border-cyan-200 px-4 py-2.5 rounded-lg hover:bg-cyan-100 text-sm font-semibold transition">
+                    <i class="fas fa-list mr-1"></i> Ver Resultados
+                </button>
+            </div>
+            <div id="resultadoBusca" class="hidden mt-3 p-3 bg-gray-50 rounded border border-gray-200"></div>
+        </div>
+
+        <!-- Filtros de Microárea -->
+        <div class="bg-white p-4 rounded-xl shadow-sm mb-8 border border-cyan-100">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3"><i class="fas fa-filter mr-1"></i> Filtrar por Microárea:</p>
+            <div id="microareaButtonsContainer" class="flex flex-wrap gap-2">
+                <span class="text-sm text-gray-500 italic">Faça o upload da planilha para carregar as microáreas...</span>
+            </div>
+        </div>
+
+        <!-- KPI Cards (6 Indicadores) -->
+        <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 mb-8">
+            <div class="card border-l-4 border-cyan-500 flex flex-col justify-between cursor-pointer hover:bg-cyan-50 p-4" onclick="abrirModalFiltro('TODOS', 'total')">
+                <div>
+                    <p class="text-[10px] md:text-xs text-gray-500 font-semibold mb-1 uppercase">Total Pacientes</p>
+                    <h2 id="kpi-total" class="text-xl md:text-2xl font-bold text-gray-800">0</h2>
+                </div>
+                <div class="mt-2 text-cyan-600 text-right"><i class="fas fa-users"></i></div>
+            </div>
+            
+            <div class="card border-l-4 border-blue-500 flex flex-col justify-between cursor-pointer hover:bg-blue-50 p-4" onclick="abrirModalFiltro('Realizado', 'primeiraconsulta')">
+                <div>
+                    <p class="text-[10px] md:text-xs text-gray-500 font-semibold mb-1 uppercase">Primeira Consulta</p>
+                    <h2 id="kpi-primeiraconsulta" class="text-xl md:text-2xl font-bold text-gray-800">0</h2>
+                </div>
+                <div class="mt-2 text-blue-500 text-right"><i class="fas fa-user-plus"></i></div>
+            </div>
+
+            <div class="card border-l-4 border-emerald-500 flex flex-col justify-between cursor-pointer hover:bg-emerald-50 p-4" onclick="abrirModalFiltro('Realizado', 'tratamentoconcluido')">
+                <div>
+                    <p class="text-[10px] md:text-xs text-gray-500 font-semibold mb-1 uppercase">Trat. Concluído</p>
+                    <h2 id="kpi-tratamentoconcluido" class="text-xl md:text-2xl font-bold text-gray-800">0</h2>
+                </div>
+                <div class="mt-2 text-emerald-500 text-right"><i class="fas fa-check-circle"></i></div>
+            </div>
+
+            <div class="card border-l-4 border-teal-500 flex flex-col justify-between cursor-pointer hover:bg-teal-50 p-4" onclick="abrirModalFiltro('Realizado', 'art')">
+                <div>
+                    <p class="text-[10px] md:text-xs text-gray-500 font-semibold mb-1 uppercase">Atraumático (ART)</p>
+                    <h2 id="kpi-art" class="text-xl md:text-2xl font-bold text-gray-800">0</h2>
+                </div>
+                <div class="mt-2 text-teal-500 text-right"><i class="fas fa-band-aid"></i></div>
+            </div>
+
+            <div class="card border-l-4 border-amber-500 flex flex-col justify-between cursor-pointer hover:bg-amber-50 p-4" onclick="abrirModalFiltro('Realizado', 'escovacao')">
+                <div>
+                    <p class="text-[10px] md:text-xs text-gray-500 font-semibold mb-1 uppercase">Escovação Coletiva</p>
+                    <h2 id="kpi-escovacao" class="text-xl md:text-2xl font-bold text-gray-800">0</h2>
+                </div>
+                <div class="mt-2 text-amber-500 text-right"><i class="fas fa-hands-wash"></i></div>
+            </div>
+
+            <div class="card border-l-4 border-rose-500 flex flex-col justify-between cursor-pointer hover:bg-rose-50 p-4" onclick="abrirModalFiltro('Realizado', 'exodontia')">
+                <div>
+                    <p class="text-[10px] md:text-xs text-gray-500 font-semibold mb-1 uppercase">Exodontias (Perm.)</p>
+                    <h2 id="kpi-exodontia" class="text-xl md:text-2xl font-bold text-gray-800">0</h2>
+                </div>
+                <div class="mt-2 text-rose-500 text-right"><i class="fas fa-stethoscope"></i></div>
+            </div>
+        </div>
+
+        <p class="text-sm text-gray-500 mb-4 ml-1">Dica: <b>Clique nas fatias ou barras de qualquer gráfico</b> para abrir a lista de pacientes correspondentes.</p>
+        
+        <!-- Bloco 1: Consultas e Conclusão -->
+        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-clipboard-list mr-2 text-cyan-600"></i> Produção Clínica e Conclusão</h3>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Primeira Consulta Odontológica</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="primeiraConsultaChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Tratamento Odontológico Concluído</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="tratamentoConcluidoChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bloco 2: Procedimentos Específicos -->
+        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center mt-10"><i class="fas fa-tools mr-2 text-cyan-600"></i> Procedimentos, Cirurgias e Prevenção</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Tratamento Restaurador Atraumático (ART)</h3>
+                <div class="relative h-64 w-full pb-4">
+                    <canvas id="artChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Escovação Supervisionada (Coletiva)</h3>
+                <div class="relative h-64 w-full pb-4">
+                    <canvas id="escovacaoChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Exodontias (Dentes Permanentes) & Preventivos</h3>
+                <div class="relative h-64 w-full pb-4">
+                    <canvas id="exodontiaChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: LISTA DE PACIENTES -->
+<!-- ============================================== -->
+<div id="pacientesModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col overflow-hidden">
+        
+        <div class="p-5 border-b border-gray-200 bg-cyan-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-20">
+            <div>
+                <h2 class="text-2xl font-bold text-cyan-900" id="modalTitle">Atendimento Odontológico</h2>
+                <p class="text-sm text-gray-600 mt-1" id="modalSubtitle">Carregando...</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto" id="controlesModal">
+                <label for="sortTabela" class="text-sm font-medium text-gray-700 whitespace-nowrap"><i class="fas fa-sort-amount-down-alt mr-1"></i> Ordenar:</label>
+                <select id="sortTabela" onchange="ordenarTabelaModal()" class="text-sm border border-gray-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 p-2 bg-white">
+                    <option value="default">Por Nome (A-Z)</option>
+                </select>
+
+                <button onclick="fecharModal()" class="text-gray-500 hover:text-red-500 transition focus:outline-none ml-2">
+                    <i class="fas fa-times fa-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-0 flex-1 overflow-auto bg-white relative z-10">
+            <div id="modalEmptyState" class="hidden p-10 text-center text-gray-500">
+                <i class="fas fa-file-csv fa-3x mb-4 text-gray-300"></i>
+                <p class="text-lg">Faça o upload da sua planilha primeiro.</p>
+            </div>
+            
+            <table id="modalTable" class="w-full text-left border-collapse min-w-[900px]">
+                <thead class="bg-cyan-100 text-cyan-900 sticky top-0 z-10 shadow-sm text-xs uppercase font-bold tracking-wider">
+                    <tr>
+                        <th class="p-4 border-b">Nome / Idade</th>
+                        <th class="p-4 border-b text-center">1ª Consulta</th>
+                        <th class="p-4 border-b text-center">Trat. Concluído</th>
+                        <th class="p-4 border-b text-center">ART</th>
+                        <th class="p-4 border-b text-center">Escovação Coletiva</th>
+                        <th class="p-4 border-b text-center">Exodontia Permanente</th>
+                        <th class="p-4 border-b text-center">Proc. Preventivos</th>
+                    </tr>
+                </thead>
+                <tbody id="modalTableBody" class="text-sm text-gray-700 divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+        
+        <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end items-center gap-3 z-20">
+            <button id="btnImprimirLista" onclick="imprimirLista()" class="hidden bg-cyan-600 text-white px-5 py-2.5 rounded-lg hover:bg-cyan-700 transition font-medium flex items-center shadow-sm">
+                <i class="fas fa-print mr-2"></i> Imprimir Lista
+            </button>
+            <button onclick="fecharModal()" class="bg-gray-200 text-gray-800 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition font-medium">
+                Fechar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let dadosBrutos = []; 
+    let microareaSelecionada = 'TODAS'; 
+    let resultadosBusca = []; 
+    let pacientesAtuaisModal = [];
+    let charts = {};
+
+    const defaultOptions = { 
+        responsive: true, maintainAspectRatio: false, 
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, 
+        animation: { duration: 600 } 
+    };
+
+    function getFiltrados() {
+        if (microareaSelecionada === 'TODAS') return dadosBrutos;
+        return dadosBrutos.filter(r => {
+            let ma = r['Microárea'] ? String(r['Microárea']).trim() : 'NÃO INFORMADO';
+            return ma === microareaSelecionada;
+        });
+    }
+
+    function normalizarNumero(v) {
+        if (v === null || v === undefined || String(v).trim() === '' || String(v).trim() === '-') return null;
+        const n = parseInt(String(v).replace(',', '.'), 10);
+        return Number.isFinite(n) ? n : null;
+    }
+
+    function checkRealizado(row, chavesPossiveis) {
+        for (let key of Object.keys(row)) {
+            let keyUpper = key.toUpperCase();
+            if (chavesPossiveis.some(c => keyUpper.includes(c.toUpperCase()))) {
+                let val = String(row[key] || '').trim().toUpperCase();
+                if (val === 'SIM' || val === 'REALIZADO' || val === 'AVALIADO') return true;
+                let num = normalizarNumero(row[key]);
+                if (num !== null && num > 0) return true; 
+                if (val.match(/^\d{2}\/\d{2}\/\d{4}/)) return true;
+            }
+        }
+        return false;
+    }
+
+    function buildChart(id, type, data, filterName, isDoughnut = false) {
+        let opt = { ...defaultOptions };
+        if (isDoughnut) opt.cutout = '65%';
+        opt.onHover = (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; };
+        opt.onClick = (e, el, chart) => {
+            if (el.length > 0) abrirModalFiltro(chart.data.labels[el[0].index], filterName);
+        };
+        return new Chart(document.getElementById(id), { type: type, data: data, options: opt });
+    }
+
+    function initCharts() {
+        charts.primeiraConsultaChart = buildChart('primeiraConsultaChart', 'doughnut', {
+            labels: ['Realizado', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#0ea5e9', '#e2e8f0'], borderWidth: 2 }]
+        }, 'primeiraconsulta', true);
+
+        charts.tratamentoConcluidoChart = buildChart('tratamentoConcluidoChart', 'doughnut', {
+            labels: ['Realizado', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#10b981', '#e2e8f0'], borderWidth: 2 }]
+        }, 'tratamentoconcluido', true);
+
+        charts.artChart = buildChart('artChart', 'pie', {
+            labels: ['Realizado', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#14b8a6', '#e2e8f0'], borderWidth: 2 }]
+        }, 'art');
+
+        charts.escovacaoChart = buildChart('escovacaoChart', 'pie', {
+            labels: ['Realizado', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#f59e0b', '#e2e8f0'], borderWidth: 2 }]
+        }, 'escovacao');
+
+        charts.exodontiaChart = buildChart('exodontiaChart', 'bar', {
+            labels: ['Exodontia Perm.', 'Preventivos'],
+            datasets: [{ label: 'Qtd', data: [0,0], backgroundColor: ['#f43f5e', '#6366f1'], borderRadius: 4 }]
+        }, 'exodontia');
+    }
+
+    initCharts();
+
+    // === PROCESSAMENTO DE PLANILHAS ===
+    document.getElementById('csvFileInput').addEventListener('change', e => {
+        const file = e.target.files[0]; if(!file) return;
+        const reader = new FileReader();
+        const nomeArquivo = file.name.toLowerCase();
+
+        if(nomeArquivo.endsWith('.xlsx') || nomeArquivo.endsWith('.xls')){
+            reader.onload = ev => {
+                const data = new Uint8Array(ev.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const jsonResult = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
+                processarDados(jsonResult);
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            reader.onload = ev => {
+                Papa.parse(ev.target.result, {
+                    header: true, skipEmptyLines: true, encoding: "ISO-8859-1",
+                    complete: results => processarDados(results.data)
+                });
+            };
+            reader.readAsText(file, 'ISO-8859-1');
+        }
+    });
+
+    function processarDados(dataArray) {
+        if(!dataArray.length) return alert('Planilha vazia!');
+        dadosBrutos = dataArray;
+        microareaSelecionada = 'TODAS'; 
+        gerarBotoesMicroarea(); 
+        processAndUpdateDashboard(); 
+    }
+
+    function limparDadosLocais() {
+        if (confirm("Deseja apagar os dados carregados?")) {
+            dadosBrutos = [];
+            document.getElementById('csvFileInput').value = '';
+            processAndUpdateDashboard();
+            document.getElementById('microareaButtonsContainer').innerHTML = '<span class="text-sm text-gray-500 italic">Planilha limpa...</span>';
+        }
+    }
+
+    function gerarBotoesMicroarea() {
+        const set = new Set();
+        dadosBrutos.forEach(r => { let ma = r['Microárea'] ? String(r['Microárea']).trim() : ''; if(ma && ma !== '-') set.add(ma); });
+        const container = document.getElementById('microareaButtonsContainer');
+        container.innerHTML = '';
+        
+        const btnTodas = document.createElement('button');
+        btnTodas.id = 'btn-ma-TODAS';
+        btnTodas.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-cyan-700 text-white shadow-sm';
+        btnTodas.innerHTML = '<i class="fas fa-globe mr-1"></i> Todas (Geral)';
+        btnTodas.onclick = () => filtrarPorMicroarea('TODAS');
+        container.appendChild(btnTodas);
+
+        [...set].sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(ma => {
+            const btn = document.createElement('button');
+            btn.id = 'btn-ma-' + ma.replace(/\W/g, '_');
+            btn.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-white text-cyan-800 border border-cyan-200 hover:bg-cyan-50 shadow-sm';
+            btn.innerHTML = `<i class="fas fa-map-marker-alt text-cyan-400 mr-1"></i> Microárea ${ma}`;
+            btn.onclick = () => filtrarPorMicroarea(ma);
+            container.appendChild(btn);
+        });
+    }
+
+    function filtrarPorMicroarea(ma) {
+        microareaSelecionada = ma;
+        document.querySelectorAll('.ma-btn').forEach(b => {
+            b.classList.remove('bg-cyan-700', 'text-white'); b.classList.add('bg-white', 'text-cyan-800', 'border-cyan-200');
+        });
+        const activeBtn = document.getElementById('btn-ma-' + ma.replace(/\W/g, '_'));
+        if (activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-cyan-800', 'border-cyan-200'); activeBtn.classList.add('bg-cyan-700', 'text-white');
+        }
+        processAndUpdateDashboard();
+    }
+
+    // === LÓGICA DE INDICADORES ===
+    function processAndUpdateDashboard() {
+        const dados = getFiltrados(); 
+        let total = dados.length;
+
+        let pc = [0,0]; // Realizado, Pendente
+        let tc = [0,0];
+        let art = [0,0];
+        let esc = [0,0];
+        let exo = [0,0];
+        let prev = [0,0];
+
+        dados.forEach(r => {
+            checkRealizado(r, ['Primeira consulta', '1ª consulta']) ? pc[0]++ : pc[1]++;
+            checkRealizado(r, ['Tratamento odontológico concluído', 'Concluído']) ? tc[0]++ : tc[1]++;
+            checkRealizado(r, ['Atraumático', 'ART', 'Restaurador atraumático']) ? art[0]++ : art[1]++;
+            checkRealizado(r, ['Escovação', 'Atividade coletiva']) ? esc[0]++ : esc[1]++;
+            checkRealizado(r, ['Exodontia', 'Permanente']) ? exo[0]++ : exo[1]++;
+            checkRealizado(r, ['Preventivo', 'Procedimentos preventivos']) ? prev[0]++ : prev[1]++;
+        });
+
+        document.getElementById('kpi-total').innerText = total.toLocaleString('pt-BR');
+        document.getElementById('kpi-primeiraconsulta').innerText = pc[0].toLocaleString('pt-BR');
+        document.getElementById('kpi-tratamentoconcluido').innerText = tc[0].toLocaleString('pt-BR');
+        document.getElementById('kpi-art').innerText = art[0].toLocaleString('pt-BR');
+        document.getElementById('kpi-escovacao').innerText = esc[0].toLocaleString('pt-BR');
+        document.getElementById('kpi-exodontia').innerText = exo[0].toLocaleString('pt-BR');
+
+        charts.primeiraConsultaChart.data.datasets[0].data = pc; charts.primeiraConsultaChart.update();
+        charts.tratamentoConcluidoChart.data.datasets[0].data = tc; charts.tratamentoConcluidoChart.update();
+        charts.artChart.data.datasets[0].data = art; charts.artChart.update();
+        charts.escovacaoChart.data.datasets[0].data = esc; charts.escovacaoChart.update();
+        charts.exodontiaChart.data.datasets[0].data = [exo[0], prev[0]]; charts.exodontiaChart.update();
+    }
+
+    // === BUSCA E MODAL ===
+    function buscarPaciente(texto) {
+        const q = texto.trim().toLowerCase();
+        const box = document.getElementById('resultadoBusca');
+        if (q.length < 2) { resultadosBusca = []; box.classList.add('hidden'); return; }
+        resultadosBusca = getFiltrados().filter(r => String(r['Nome'] || '').toLowerCase().includes(q)).slice(0, 20);
+        box.classList.remove('hidden');
+        if (resultadosBusca.length > 0) {
+            box.innerHTML = `<div class="text-xs text-gray-500 mb-2">${resultadosBusca.length} resultado(s)</div>
+                <div class="flex flex-wrap gap-2">
+                    ${resultadosBusca.map((r, i) => `<button onclick="abrirModalComFiltro([resultadosBusca[${i}]], 'Paciente:${r['Nome']}')" class="px-3 py-2 bg-white border border-cyan-200 rounded-lg text-sm text-cyan-700 shadow-sm">${r['Nome'] || 'Sem nome'}</button>`).join('')}
+                </div>`;
+        } else {
+            box.innerHTML = '<div class="text-sm text-gray-500">Nenhum paciente encontrado.</div>';
+        }
+    }
+    function abrirResultadosBusca() {
+        if (!resultadosBusca.length) return alert('Digite um nome válido.');
+        abrirModalComFiltro(resultadosBusca, 'Resultados da Busca');
+    }
+
+    function abrirModalFiltro(valor, tipo) {
+        const base = getFiltrados();
+        let filtrados = [];
+        
+        if (tipo === 'total') filtrados = base;
+        else {
+            let chaves = [];
+            if (tipo === 'primeiraconsulta') chaves = ['Primeira consulta', '1ª consulta'];
+            if (tipo === 'tratamentoconcluido') chaves = ['Tratamento odontológico concluído', 'Concluído'];
+            if (tipo === 'art') chaves = ['Atraumático', 'ART', 'Restaurador atraumático'];
+            if (tipo === 'escovacao') chaves = ['Escovação', 'Atividade coletiva'];
+            if (tipo === 'exodontia') chaves = ['Exodontia', 'Permanente'];
+            
+            filtrados = base.filter(r => {
+                let status = checkRealizado(r, chaves);
+                return valor === 'Realizado' ? status : !status;
+            });
+        }
+        abrirModalComFiltro(filtrados, `Filtro: ${valor} (${tipo})`);
+    }
+
+    function abrirModalComFiltro(dados, titulo) {
+        pacientesAtuaisModal = dados;
+        document.getElementById('modalTitle').innerText = titulo;
+        document.getElementById('modalEmptyState').classList.add('hidden');
+        document.getElementById('modalTable').classList.remove('hidden');
+        document.getElementById('btnImprimirLista').classList.remove('hidden');
+        document.getElementById('controlesModal').classList.remove('hidden');
+        document.getElementById('pacientesModal').classList.remove('hidden');
+        ordenarTabelaModal();
+    }
+
+    function renderStatus(booleano) {
+        return booleano 
+            ? '<span class="px-2 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-full text-xs">Sim</span>'
+            : '<span class="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">Não</span>';
+    }
+
+    function ordenarTabelaModal() {
+        pacientesAtuaisModal.sort((a, b) => String(a['Nome']||'').localeCompare(String(b['Nome']||'')));
+        const tbody = document.getElementById('modalTableBody');
+        document.getElementById('modalSubtitle').innerText = `Total: ${pacientesAtuaisModal.length} paciente(s).`;
+        
+        tbody.innerHTML = pacientesAtuaisModal.map(p => {
+            let pc = checkRealizado(p, ['Primeira consulta', '1ª consulta']);
+            let tc = checkRealizado(p, ['Tratamento odontológico concluído', 'Concluído']);
+            let art = checkRealizado(p, ['Atraumático', 'ART', 'Restaurador atraumático']);
+            let esc = checkRealizado(p, ['Escovação', 'Atividade coletiva']);
+            let exo = checkRealizado(p, ['Exodontia', 'Permanente']);
+            let prev = checkRealizado(p, ['Preventivo', 'Procedimentos preventivos']);
+            
+            return `
+                <tr class="border-b border-gray-100 hover:bg-cyan-50 transition">
+                    <td class="p-4 font-medium text-gray-900">${p['Nome'] || '-'} <br><span class="text-xs text-gray-500">${p['Idade']||''}</span></td>
+                    <td class="p-4 text-center">${renderStatus(pc)}</td>
+                    <td class="p-4 text-center">${renderStatus(tc)}</td>
+                    <td class="p-4 text-center">${renderStatus(art)}</td>
+                    <td class="p-4 text-center">${renderStatus(esc)}</td>
+                    <td class="p-4 text-center">${renderStatus(exo)}</td>
+                    <td class="p-4 text-center">${renderStatus(prev)}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function fecharModal() { document.getElementById('pacientesModal').classList.add('hidden'); }
+
+    function imprimirLista() {
+        const titulo = document.getElementById('modalTitle').innerText;
+        const tabela = document.getElementById('modalTable').outerHTML;
+        const janela = window.open('', '_blank', 'width=1000,height=700');
+        janela.document.write(`
+            <html><head><title>Relatório - ${titulo}</title><style>
+            body{font-family:sans-serif;padding:20px;} h1{color:#164e63;} 
+            table{width:100%;border-collapse:collapse;margin-top:20px;font-size:12px;}
+            th,td{border:1px solid #ddd;padding:8px;text-align:center;} th{background:#ecfeff;color:#164e63;}
+            </style></head><body><h1>${titulo}</h1>${tabela}</body></html>
+        `);
+        janela.document.close(); janela.focus(); setTimeout(() => { janela.print(); janela.close(); }, 500);
+    }
+</script>
+</body>
+</html>

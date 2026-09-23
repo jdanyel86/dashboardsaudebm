@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Saúde da Gestante</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Papa Parse para ler CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
+        .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="text-gray-800 relative">
+
+<div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-pink-800 text-white flex-col transition-all duration-300 hidden md:flex shadow-xl overflow-y-auto z-20">
+        <div class="p-6 text-2xl font-bold border-b border-pink-700 text-center flex items-center justify-center">
+            <i class="fas fa-baby mr-3 text-pink-300"></i> PSF 1
+        </div>
+        <nav class="flex-1 p-4 space-y-3 mt-4">
+            <a href="index.html" class="flex items-center p-3 bg-indigo-800 rounded-lg text-white font-medium">
+                Home
+            </a>
+            <a href="Gestantes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Gestantes
+            </a>
+            <a href="Infantil.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+               Crianças
+            </a>
+            <a href="Diabeticos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Diabéticos
+            </a>
+            <a href="Hipertensos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Hipertensos
+            </a>
+            <a href="Mulher.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Mulher
+            </a>
+            <a href="Idosos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Idosos
+            </a>
+            <a href="agentes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                ACS
+            </a>
+            <a href="odonto.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+                Odonto
+            </a>
+        </nav>
+        <div class="p-4 text-xs text-pink-300 text-center border-t border-pink-700">
+            José Danyel Siqueira do Nascimento
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Acompanhamento de Gestantes</h1>
+                <p class="text-gray-500 mt-1 text-sm md:text-base">Monitoramento de Pré-Natal, Exames e Puerpério</p>
+            </div>
+            
+            <div class="flex items-center gap-2 flex-wrap">
+                <div class="file-upload-wrapper">
+                    <button class="bg-pink-600 text-white px-5 py-2.5 rounded-lg hover:bg-pink-700 transition shadow flex items-center cursor-pointer text-sm font-medium">
+                        <i class="fas fa-upload mr-2"></i> Carregar CSV e-SUS
+                    </button>
+                    <input type="file" id="csvFileInput" accept=".csv" />
+                </div>
+                <button id="btnClearStorage" onclick="limparDadosLocais()" class="hidden bg-gray-200 text-gray-700 px-3 py-2.5 rounded-lg hover:bg-red-100 hover:text-red-600 transition text-sm" title="Remover planilha salva">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Barra de Busca -->
+        <div class="card mb-4 border border-pink-100 p-4">
+            <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+                <div class="relative flex-1">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <input id="buscaPaciente" type="search" placeholder="Buscar gestante por nome..."
+                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-pink-200 focus:border-pink-500 text-sm"
+                           oninput="buscarPaciente(this.value)">
+                </div>
+                <button onclick="abrirResultadosBusca()" class="bg-pink-50 text-pink-800 border border-pink-200 px-4 py-2.5 rounded-lg hover:bg-pink-100 text-sm font-semibold transition">
+                    <i class="fas fa-list mr-1"></i> Ver Resultados
+                </button>
+            </div>
+            <div id="resultadoBusca" class="hidden mt-3 p-3 bg-gray-50 rounded border border-gray-200"></div>
+        </div>
+
+        <!-- Filtros de Microárea -->
+        <div class="bg-white p-4 rounded-xl shadow-sm mb-8 border border-pink-100">
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3"><i class="fas fa-filter mr-1"></i> Filtrar por Microárea:</p>
+            <div id="microareaButtonsContainer" class="flex flex-wrap gap-2">
+                <span class="text-sm text-gray-500 italic">Faça o upload do CSV para carregar as microáreas...</span>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-8">
+            <div class="card border-l-4 border-pink-500 flex items-center justify-between cursor-pointer hover:bg-pink-50" onclick="abrirModalFiltro('TODAS', 'total')" title="Clique para ver todas">
+                <div>
+                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Total de Gestantes</p>
+                    <h2 id="kpi-total" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
+                </div>
+                <div class="p-3 md:p-4 bg-pink-100 rounded-full text-pink-600">
+                    <i class="fas fa-users fa-xl"></i>
+                </div>
+            </div>
+            
+            <div class="card border-l-4 border-indigo-500 flex items-center justify-between cursor-pointer hover:bg-indigo-50" onclick="abrirModalFiltro('Com Captação (< 12 sem)', 'captacao')">
+                <div>
+                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Captação Precoce</p>
+                    <h2 id="kpi-captacao" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
+                    <p id="kpi-captacao-sub" class="text-xs text-indigo-600 mt-1">Cons. até 12 sem.</p>
+                </div>
+                <div class="p-3 md:p-4 bg-indigo-50 rounded-full text-indigo-500">
+                    <i class="fas fa-calendar-check fa-xl"></i>
+                </div>
+            </div>
+
+            <div class="card border-l-4 border-emerald-500 flex items-center justify-between cursor-pointer hover:bg-emerald-50" onclick="abrirModalFiltro('7 ou mais', 'consultas')">
+                <div>
+                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Consultas Adequadas</p>
+                    <h2 id="kpi-consultas" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
+                    <p id="kpi-consultas-sub" class="text-xs text-emerald-600 mt-1">7 ou + consultas</p>
+                </div>
+                <div class="p-3 md:p-4 bg-emerald-50 rounded-full text-emerald-500">
+                    <i class="fas fa-user-md fa-xl"></i>
+                </div>
+            </div>
+
+            <div class="card border-l-4 border-red-500 flex items-center justify-between cursor-pointer hover:bg-red-50" onclick="abrirModalFiltro('Alto', 'risco')">
+                <div>
+                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Alto Risco</p>
+                    <h2 id="kpi-risco" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
+                    <p class="text-xs text-red-600 mt-1">Atenção Especial</p>
+                </div>
+                <div class="p-3 md:p-4 bg-red-50 rounded-full text-red-500">
+                    <i class="fas fa-exclamation-triangle fa-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bloco 1: Idade Gestacional e Risco -->
+        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-info-circle mr-2 text-pink-600"></i> Perfil Gestacional</h3>
+        <p class="text-sm text-gray-500 mb-4">Dica: <b>Clique nas fatias ou barras de qualquer gráfico</b> para abrir a lista de pacientes correspondentes.</p>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Idade Gestacional DUM (Trimestre)</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="igChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Risco Gestacional</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="riscoChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bloco 2: Consultas -->
+        <h3 id="consultas" class="text-xl font-bold text-gray-800 mb-4 flex items-center mt-10"><i class="fas fa-stethoscope mr-2 text-pink-600"></i> Consultas</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card">
+                 <h3 class="text-md font-bold text-gray-700 mb-2 text-center">Total de Consultas Med/Enf (Pré-Natal)</h3>
+                 <div class="relative h-72 w-full">
+                     <canvas id="consultasPNChart"></canvas>
+                 </div>
+            </div>
+            <div class="card">
+                 <h3 class="text-md font-bold text-gray-700 mb-2 text-center">Consultas Odontológicas</h3>
+                 <div class="relative h-72 w-full pb-4">
+                     <canvas id="odontoChart"></canvas>
+                 </div>
+            </div>
+        </div>
+
+        <!-- Bloco 3: Exames -->
+        <h3 id="exames" class="text-xl font-bold text-gray-800 mb-4 flex items-center mt-10"><i class="fas fa-vial mr-2 text-pink-600"></i> Exames Laboratoriais</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Exames 1º Trimestre</h3>
+                <div class="relative h-72 w-full">
+                    <canvas id="exames1TrimChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Exame HIV (3º Trimestre)</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="hiv3Chart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Exame Sífilis (3º Trimestre)</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="sif3Chart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <div class="flex flex-col items-center justify-center h-full text-center p-6 bg-pink-50 rounded-xl border border-pink-100">
+                    <i class="fas fa-heartbeat text-pink-500 fa-3x mb-3"></i>
+                    <h4 class="font-bold text-pink-900 text-lg">Painel de Exames</h4>
+                    <p class="text-sm text-gray-600 mt-1">Acompanhe os resultados laboratoriais e preventivos de forma individualizada para cada gestante da sua microárea.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bloco 4: Procedimentos e Aferições (Painéis Individuais) -->
+        <h3 id="procedimentos" class="text-xl font-bold text-gray-800 mb-4 flex items-center mt-10"><i class="fas fa-syringe mr-2 text-pink-600"></i> Aferições, Vacinas e Puerpério</h3>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Pressão Arterial (Meta: 7 ou +)</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="paChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Antropometria (Peso/Altura) (Meta: 7 ou +)</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="antropoChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Vacina DTpa</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="dtpaChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Consulta Puerperal</h3>
+                <div class="relative h-72 w-full pb-4">
+                    <canvas id="puerperioChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- ============================================== -->
+<!-- MODAL: LISTA DE PACIENTES -->
+<!-- ============================================== -->
+<div id="pacientesModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col overflow-hidden">
+        
+        <div class="p-5 border-b border-gray-200 bg-pink-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-20">
+            <div>
+                <h2 class="text-2xl font-bold text-pink-900" id="modalTitle">Gestantes</h2>
+                <p class="text-sm text-gray-600 mt-1" id="modalSubtitle">Carregando...</p>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto" id="controlesModal">
+                <label for="sortTabela" class="text-sm font-medium text-gray-700 whitespace-nowrap"><i class="fas fa-sort-amount-down-alt mr-1"></i> Ordenar:</label>
+                <select id="sortTabela" onchange="ordenarTabelaModal()" class="text-sm border border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 p-2 bg-white">
+                    <option value="default">Por Nome (A-Z)</option>
+                    <option value="ig_maior">Maior Idade Gestacional (IG)</option>
+                    <option value="ig_menor">Menor Idade Gestacional (IG)</option>
+                    <option value="consultas">Menos Consultas (Risco)</option>
+                </select>
+
+                <button onclick="fecharModal()" class="text-gray-500 hover:text-red-500 transition focus:outline-none ml-2">
+                    <i class="fas fa-times fa-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-0 flex-1 overflow-auto bg-white relative z-10">
+            <div id="modalEmptyState" class="hidden p-10 text-center text-gray-500">
+                <i class="fas fa-file-csv fa-3x mb-4 text-gray-300"></i>
+                <p class="text-lg">Faça o upload do seu arquivo CSV primeiro.</p>
+            </div>
+            
+            <table id="modalTable" class="w-full text-left border-collapse min-w-[800px]">
+                <thead class="bg-pink-100 text-pink-900 sticky top-0 z-10 shadow-sm text-xs uppercase font-bold tracking-wider">
+                    <tr>
+                        <th class="p-4 border-b">Nome</th>
+                        <th class="p-4 border-b text-center">IG (DUM)</th>
+                        <th class="p-4 border-b text-center">Risco</th>
+                        <th class="p-4 border-b text-center">Cons. Pré-Natal</th>
+                        <th class="p-4 border-b text-center">Cons. Odonto</th>
+                        <th class="p-4 border-b text-center">Captação < 12 sem</th>
+                        <th class="p-4 border-b text-center">Vacina DTpa</th>
+                    </tr>
+                </thead>
+                <tbody id="modalTableBody" class="text-sm text-gray-700 divide-y divide-gray-100"></tbody>
+            </table>
+        </div>
+        
+        <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end items-center gap-3 z-20">
+            <button id="btnImprimirLista" onclick="imprimirLista()" class="hidden bg-pink-600 text-white px-5 py-2.5 rounded-lg hover:bg-pink-700 transition font-medium flex items-center shadow-sm">
+                <i class="fas fa-print mr-2"></i> Relatório Completo (Imprimir)
+            </button>
+            <button onclick="fecharModal()" class="bg-gray-200 text-gray-800 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition font-medium">
+                Fechar
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let dadosBrutosCSV = []; 
+    let microareaSelecionada = 'TODAS'; 
+    let resultadosBusca = []; 
+    let pacientesAtuaisModal = [];
+    let tipoFiltroAtivo = ''; 
+    let charts = {};
+
+    const defaultOptions = { 
+        responsive: true, maintainAspectRatio: false, 
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, 
+        animation: { duration: 800 } 
+    };
+    
+    function getFiltrados() {
+        if (microareaSelecionada === 'TODAS') return dadosBrutosCSV;
+        return dadosBrutosCSV.filter(r => {
+            let ma = r['Microárea'] ? r['Microárea'].trim() : 'NÃO INFORMADO';
+            return ma === microareaSelecionada;
+        });
+    }
+
+    const getNum = (val) => {
+        let n = parseInt(val);
+        return isNaN(n) ? 0 : n;
+    };
+
+    // Corrige nomes de coluna vindos com parênteses desbalanceados no cabeçalho
+    // (ex.: "Exame de Sífilis no primeiro trimestre)"), sem afetar cabeçalhos
+    // legítimos com parênteses balanceados (ex.: "IG (DUM) (semanas)").
+    function normalizeHeaderName(h) {
+        let header = String(h).trim();
+        let opens = (header.match(/\(/g) || []).length;
+        let closes = (header.match(/\)/g) || []).length;
+        while (closes > opens && header.endsWith(')')) {
+            header = header.slice(0, -1).trim();
+            closes--;
+        }
+        return header;
+    }
+
+    function normalizeRows(rows) {
+        if (!Array.isArray(rows) || rows.length === 0) return rows;
+        // Só remapeia se alguma chave realmente precisar de correção (evita custo desnecessário)
+        const sampleKeys = Object.keys(rows[0] || {});
+        const needsFix = sampleKeys.some(k => normalizeHeaderName(k) !== k);
+        if (!needsFix) return rows;
+        return rows.map(row => {
+            const newRow = {};
+            Object.keys(row).forEach(k => {
+                newRow[normalizeHeaderName(k)] = row[k];
+            });
+            return newRow;
+        });
+    }
+
+    // Nova Regra DTpa: NAO_SE_APLICA, -, vazio, etc. contam como PENDENTE; qualquer outro valor/texto é REALIZADO
+    const checkStatusDtpa = (val) => {
+        if (!val) return 'PENDENTE';
+        let s = String(val).trim().toUpperCase();
+        if (s === '-' || s === '' || s === 'NÃO' || s === 'NAO' || s === 'NAO_SE_APLICA') return 'PENDENTE';
+        return 'REALIZADO'; 
+    };
+
+    const checkStatus = (val) => {
+        let s = String(val || '').trim().toUpperCase();
+        if (s === 'SIM') return 'REALIZADO';
+        if (s === 'NAO_SE_APLICA') return 'NAO_SE_APLICA';
+        let n = parseInt(s);
+        if (!isNaN(n) && n > 0) return 'REALIZADO'; 
+        return 'PENDENTE'; 
+    };
+
+    function buildClickableChart(id, type, config, filterName) {
+        let opt = { ...defaultOptions, ...config.options };
+        opt.onHover = (event, chartElement) => { 
+            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default'; 
+        };
+        opt.onClick = (event, elements, chart) => {
+            if (elements.length > 0) {
+                const el = elements[0];
+                const label = chart.data.labels[el.index];
+                if (chart.data.datasets.length > 1) {
+                    const datasetLabel = chart.data.datasets[el.datasetIndex].label; 
+                    abrirModalFiltro(`${label}|${datasetLabel}`, filterName); 
+                } else {
+                    abrirModalFiltro(label, filterName); 
+                }
+            }
+        };
+        return new Chart(document.getElementById(id), { type: type, data: config.data, options: opt });
+    }
+
+    function initCharts() {
+        charts.igChart = buildClickableChart('igChart', 'doughnut', {
+            data: { labels: ['1º Trim (até 13 sem)', '2º Trim (14 a 27 sem)', '3º Trim (28+ sem)', 'Sem Registro'], datasets: [{ data: [0,0,0,0], backgroundColor: ['#38bdf8', '#fbbf24', '#f43f5e', '#94a3b8'], borderWidth: 2 }] },
+            options: { cutout: '60%' }
+        }, 'ig');
+
+        charts.riscoChart = buildClickableChart('riscoChart', 'pie', {
+            data: { labels: ['Habitual', 'Alto'], datasets: [{ data: [0,0], backgroundColor: ['#10b981', '#ef4444'], borderWidth: 2 }] }
+        }, 'risco');
+
+        charts.consultasPNChart = buildClickableChart('consultasPNChart', 'bar', {
+            data: { 
+                labels: ['Menos de 7', '7 ou mais'], 
+                datasets: [{ label: 'Gestantes', data: [0,0], backgroundColor: ['#f43f5e', '#10b981'], borderRadius: 4 }] 
+            },
+            options: { plugins: { legend: { display: false } } }
+        }, 'consultas');
+
+        charts.odontoChart = buildClickableChart('odontoChart', 'doughnut', {
+            data: { labels: ['Com Consulta', 'Sem Consulta'], datasets: [{ data: [0,0], backgroundColor: ['#8b5cf6', '#cbd5e1'], borderWidth: 2 }] },
+            options: { cutout: '65%' }
+        }, 'odonto');
+
+        let stackedOptions = { scales: { x: { stacked: true }, y: { stacked: true } } };
+
+        charts.exames1TrimChart = buildClickableChart('exames1TrimChart', 'bar', {
+            data: { labels: ['HIV', 'Sífilis', 'Hepatite B', 'Hepatite C'], datasets: [ { label: 'Realizado', data: [0,0,0,0], backgroundColor: '#10b981' }, { label: 'Pendente', data: [0,0,0,0], backgroundColor: '#ef4444' } ] },
+            options: stackedOptions
+        }, 'exame1');
+
+        const pieOpts = { plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 11 } } } } };
+        
+        charts.hiv3Chart = buildClickableChart('hiv3Chart', 'pie', {
+            data: { labels: ['Realizado', 'Pendente', 'N/A'], datasets: [{ data: [0,0,0], backgroundColor: ['#10b981', '#ef4444', '#fbbf24'] }] },
+            options: pieOpts
+        }, 'hiv3_pizza');
+
+        charts.sif3Chart = buildClickableChart('sif3Chart', 'pie', {
+            data: { labels: ['Realizado', 'Pendente', 'N/A'], datasets: [{ data: [0,0,0], backgroundColor: ['#10b981', '#ef4444', '#fbbf24'] }] },
+            options: pieOpts
+        }, 'sif3_pizza');
+
+        charts.paChart = buildClickableChart('paChart', 'pie', {
+            data: { labels: ['7 ou + (Ideal)', 'Menos de 7'], datasets: [{ data: [0,0], backgroundColor: ['#10b981', '#ef4444'] }] },
+            options: pieOpts
+        }, 'pa_pizza');
+
+        charts.antropoChart = buildClickableChart('antropoChart', 'pie', {
+            data: { labels: ['7 ou + (Ideal)', 'Menos de 7'], datasets: [{ data: [0,0], backgroundColor: ['#10b981', '#ef4444'] }] },
+            options: pieOpts
+        }, 'antropo_pizza');
+
+        // DTpa ajustado para 2 categorias: Realizada e Pendente (agrupando NAO_SE_APLICA)
+        charts.dtpaChart = buildClickableChart('dtpaChart', 'pie', {
+            data: { labels: ['Realizada', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#8b5cf6', '#cbd5e1'] }] },
+            options: pieOpts
+        }, 'dtpa_pizza');
+
+        charts.puerperioChart = buildClickableChart('puerperioChart', 'pie', {
+            data: { labels: ['Realizada', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#8b5cf6', '#cbd5e1'] }] },
+            options: pieOpts
+        }, 'puerperio_pizza');
+    }
+
+    initCharts();
+
+    // === GERENCIAMENTO DE LOCALSTORAGE ===
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedData = localStorage.getItem('gestash_csv_data');
+        if (savedData) {
+            try {
+                dadosBrutosCSV = normalizeRows(JSON.parse(savedData));
+                if (dadosBrutosCSV.length > 0) {
+                    document.getElementById('btnClearStorage').classList.remove('hidden');
+                    gerarBotoesMicroarea();
+                    processAndUpdateDashboard();
+                }
+            } catch (err) {
+                console.error("Erro ao carregar dados do LocalStorage", err);
+            }
+        }
+    });
+
+    document.getElementById('csvFileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        Papa.parse(file, { header: true, skipEmptyLines: true, encoding: "ISO-8859-1", transformHeader: function(h) {
+            // Corrige cabeçalhos exportados com parêntese sobrando/desbalanceado
+            // (ex.: "Exame de Sífilis no primeiro trimestre)"), sem afetar
+            // cabeçalhos legítimos com parênteses balanceados (ex.: "IG (DUM) (semanas)").
+            let header = h.trim();
+            let opens = (header.match(/\(/g) || []).length;
+            let closes = (header.match(/\)/g) || []).length;
+            while (closes > opens && header.endsWith(')')) {
+                header = header.slice(0, -1).trim();
+                closes--;
+            }
+            return header;
+        }, complete: function(results) {
+            dadosBrutosCSV = normalizeRows(results.data);
+            if (dadosBrutosCSV.length === 0) return alert("Planilha vazia ou formato inválido!");
+            
+            try {
+                localStorage.setItem('gestash_csv_data', JSON.stringify(dadosBrutosCSV));
+                document.getElementById('btnClearStorage').classList.remove('hidden');
+            } catch (err) {
+                console.warn("Arquivo muito grande para o LocalStorage do navegador.", err);
+            }
+
+            microareaSelecionada = 'TODAS'; 
+            gerarBotoesMicroarea(); 
+            processAndUpdateDashboard(); 
+        }});
+    });
+
+    function limparDadosLocais() {
+        if (confirm("Deseja apagar a planilha salva na memória do navegador?")) {
+            localStorage.removeItem('gestash_csv_data');
+            dadosBrutosCSV = [];
+            document.getElementById('btnClearStorage').classList.add('hidden');
+            window.location.reload();
+        }
+    }
+
+    function buscarPaciente(texto) {
+        const q = texto.trim().toLowerCase();
+        const box = document.getElementById('resultadoBusca');
+        if (q.length < 2) { resultadosBusca = []; box.classList.add('hidden'); return; }
+        resultadosBusca = getFiltrados().filter(r => String(r['Nome'] || '').toLowerCase().includes(q)).slice(0, 20);
+        box.classList.remove('hidden');
+        if (resultadosBusca.length > 0) {
+            box.innerHTML = `
+                <div class="text-xs text-gray-500 mb-2">${resultadosBusca.length} resultado(s) encontrados</div>
+                <div class="flex flex-wrap gap-2">
+                    ${resultadosBusca.map((r, i) => `
+                        <button onclick="abrirModalBuscaExata(${i})" class="px-3 py-2 bg-white border border-pink-200 rounded-lg text-sm font-semibold text-pink-700 hover:bg-pink-50 transition shadow-sm">
+                            <i class="fas fa-user mr-1 text-pink-400"></i> ${r['Nome'] || 'Sem nome'}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            box.innerHTML = '<div class="text-sm text-gray-500">Nenhuma gestante encontrada.</div>';
+        }
+    }
+
+    function abrirModalBuscaExata(index) {
+        let paciente = resultadosBusca[index];
+        tipoFiltroAtivo = 'busca';
+        pacientesAtuaisModal = [paciente]; 
+        document.getElementById('modalTitle').innerText = 'Gestante: ' + (paciente['Nome'] || 'Sem Nome');
+        abrirLayoutModalBase();
+    }
+
+    function abrirResultadosBusca() {
+        if (!resultadosBusca.length) return alert('Digite um nome válido para pesquisar.');
+        tipoFiltroAtivo = 'busca';
+        pacientesAtuaisModal = [...resultadosBusca];
+        document.getElementById('modalTitle').innerText = 'Resultados da Busca';
+        abrirLayoutModalBase();
+    }
+
+    function gerarBotoesMicroarea() {
+        const set = new Set();
+        dadosBrutosCSV.forEach(r => {
+            let ma = r['Microárea'] ? r['Microárea'].trim() : 'NÃO INFORMADO';
+            if(ma && ma !== '-') set.add(ma);
+        });
+        const container = document.getElementById('microareaButtonsContainer');
+        container.innerHTML = '';
+        const btnTodas = document.createElement('button');
+        btnTodas.id = 'btn-ma-TODAS';
+        btnTodas.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-pink-700 text-white shadow-sm';
+        btnTodas.innerHTML = '<i class="fas fa-globe mr-1"></i> Todas (Geral)';
+        btnTodas.onclick = () => filtrarPorMicroarea('TODAS');
+        container.appendChild(btnTodas);
+
+        [...set].sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(ma => {
+            const id = 'btn-ma-' + ma.replace(/\W/g, '_');
+            const btn = document.createElement('button');
+            btn.id = id;
+            btn.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-white text-pink-800 border border-pink-200 hover:bg-pink-50 shadow-sm';
+            btn.innerHTML = `<i class="fas fa-map-marker-alt text-pink-400 mr-1"></i> Microárea ${ma}`;
+            btn.onclick = () => filtrarPorMicroarea(ma);
+            container.appendChild(btn);
+        });
+    }
+
+    function filtrarPorMicroarea(ma) {
+        microareaSelecionada = ma;
+        document.querySelectorAll('.ma-btn').forEach(b => {
+            b.classList.remove('bg-pink-700', 'text-white');
+            b.classList.add('bg-white', 'text-pink-800', 'border-pink-200');
+        });
+        const id = 'btn-ma-' + ma.replace(/\W/g, '_');
+        const activeBtn = document.getElementById(id);
+        if (activeBtn) {
+            activeBtn.classList.remove('bg-white', 'text-pink-800', 'border-pink-200');
+            activeBtn.classList.add('bg-pink-700', 'text-white');
+        }
+        document.getElementById('resultadoBusca').classList.add('hidden');
+        document.getElementById('buscaPaciente').value = '';
+        resultadosBusca = [];
+        processAndUpdateDashboard();
+    }
+
+    function processAndUpdateDashboard() {
+        const dados = getFiltrados(); 
+        let total = dados.length;
+
+        let countCaptacao = 0, countConsultasOk = 0, countAltoRisco = 0;
+        let igCounts = [0, 0, 0, 0]; 
+        let riscoCounts = { 'Habitual': 0, 'Alto': 0 };
+        let consPNCounts = [0, 0]; 
+        let odontoCounts = [0, 0]; 
+        
+        let hiv1 = [0,0], sif1 = [0,0], hepB1 = [0,0], hepC1 = [0,0];
+        let hiv3 = [0,0,0], sif3 = [0,0,0]; 
+        let pa = [0,0], antropo = [0,0]; 
+        let dtpa = [0,0], puerperio = [0,0];
+
+        dados.forEach(row => {
+            let consAte12 = getNum(row['Quantidade de atendimentos até 12 semanas no pré-natal']);
+            if (consAte12 > 0) countCaptacao++;
+
+            let consTotais = getNum(row['Quantidade de atendimentos no pré-natal']);
+            if (consTotais < 7) { 
+                consPNCounts[0]++; 
+            } else { 
+                consPNCounts[1]++; 
+                countConsultasOk++; 
+            }
+
+            let risco = String(row['Risco gestacional'] || '').trim().toLowerCase();
+            if (risco.includes('alto')) { riscoCounts['Alto']++; countAltoRisco++; }
+            else riscoCounts['Habitual']++;
+
+            let ig = getNum(row['IG (DUM) (semanas)']);
+            let igRaw = String(row['IG (DUM) (semanas)'] || '').trim();
+            if (igRaw === '-' || igRaw === '') igCounts[3]++;
+            else if (ig < 14) igCounts[0]++;
+            else if (ig <= 27) igCounts[1]++;
+            else igCounts[2]++;
+
+            let odonto = getNum(row['Quantidade de atendimentos odontológicos no pré-natal']);
+            if (odonto > 0) odontoCounts[0]++; else odontoCounts[1]++;
+            
+            const addExameDuplo = (val, arr) => {
+                let status = checkStatus(val);
+                if (status === 'REALIZADO') arr[0]++; else arr[1]++;
+            };
+
+            const addExameTriplo = (val, arr) => {
+                let status = checkStatus(val);
+                if (status === 'REALIZADO') arr[0]++;
+                else if (status === 'NAO_SE_APLICA') arr[2]++;
+                else arr[1]++;
+            };
+
+            addExameDuplo(row['Exame de HIV no primeiro trimestre'], hiv1);
+            addExameDuplo(row['Exame de Hepatite B no primeiro trimestre'], hepB1);
+            addExameDuplo(row['Exame de Hepatite C no primeiro trimestre'], hepC1);
+            addExameDuplo(row['Exame de Sífilis no primeiro trimestre'], sif1);
+            
+            let qtdPA = getNum(row['Quantidade de medições de pressão arterial']);
+            if (qtdPA >= 7) pa[0]++; else pa[1]++;
+
+            let qtdAntropo = getNum(row['Quantidade de medições simultâneas de peso e altura']);
+            if (qtdAntropo >= 7) antropo[0]++; else antropo[1]++;
+            
+            // DTpa nova regra: se for realizado (qualquer texto/valor), dtpa[0]++; senão (incluindo NAO_SE_APLICA, -, vazio), dtpa[1]++;
+            let statusDtpa = checkStatusDtpa(row['dTpa']);
+            if (statusDtpa === 'REALIZADO') dtpa[0]++;
+            else dtpa[1]++;
+
+            addExameDuplo(row['Quantidade de atendimentos no puerpério'], puerperio);
+            
+            addExameTriplo(row['Exame de HIV no terceiro trimestre'], hiv3);
+            addExameTriplo(row['Exame de Sífilis no terceiro trimestre'] || row['Exame de Sifilis no terceiro trimestre'], sif3);
+        });
+
+        document.getElementById('kpi-total').innerText = total.toLocaleString('pt-BR');
+        document.getElementById('kpi-captacao').innerText = countCaptacao.toLocaleString('pt-BR');
+        document.getElementById('kpi-consultas').innerText = countConsultasOk.toLocaleString('pt-BR');
+        document.getElementById('kpi-risco').innerText = countAltoRisco.toLocaleString('pt-BR');
+
+        charts.igChart.data.datasets[0].data = igCounts; charts.igChart.update();
+        charts.riscoChart.data.datasets[0].data = [riscoCounts['Habitual'], riscoCounts['Alto']]; charts.riscoChart.update();
+        charts.consultasPNChart.data.datasets[0].data = consPNCounts; charts.consultasPNChart.update();
+        charts.odontoChart.data.datasets[0].data = odontoCounts; charts.odontoChart.update();
+        
+        charts.exames1TrimChart.data.datasets[0].data = [hiv1[0], sif1[0], hepB1[0], hepC1[0]];
+        charts.exames1TrimChart.data.datasets[1].data = [hiv1[1], sif1[1], hepB1[1], hepC1[1]];
+        charts.exames1TrimChart.update();
+
+        charts.hiv3Chart.data.datasets[0].data = hiv3; charts.hiv3Chart.update();
+        charts.sif3Chart.data.datasets[0].data = sif3; charts.sif3Chart.update();
+
+        charts.paChart.data.datasets[0].data = pa; charts.paChart.update();
+        charts.antropoChart.data.datasets[0].data = antropo; charts.antropoChart.update();
+        charts.dtpaChart.data.datasets[0].data = dtpa; charts.dtpaChart.update();
+        charts.puerperioChart.data.datasets[0].data = puerperio; charts.puerperioChart.update();
+    }
+
+    function abrirModalFiltro(valorClicado, tipoFiltro) {
+        tipoFiltroAtivo = tipoFiltro; 
+        const dadosBase = getFiltrados();
+        if (dadosBase.length === 0) return alert("Dados indisponíveis.");
+
+        let titulo = '';
+        let alvo = valorClicado;
+        let statusStacked = null;
+        
+        if (valorClicado.includes('|')) {
+            let partes = valorClicado.split('|');
+            alvo = partes[0];
+            statusStacked = partes[1];
+        }
+
+        if (tipoFiltro === 'total') titulo = 'Todas as Gestantes';
+        else if (tipoFiltro === 'captacao') titulo = 'Captação Precoce (< 12 sem)';
+        else if (statusStacked) titulo = `${alvo}: ${statusStacked}`;
+        else titulo = `Filtro: ${valorClicado}`;
+
+        document.getElementById('modalTitle').innerText = titulo;
+        document.getElementById('modalSubtitle').innerText = "Processando dados...";
+        document.getElementById('modalTableBody').innerHTML = '<tr><td colspan="7" class="text-center p-8 text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> Carregando lista...</td></tr>';
+        
+        const modal = document.getElementById('pacientesModal');
+        document.getElementById('modalEmptyState').classList.add('hidden');
+        document.getElementById('modalTable').classList.remove('hidden');
+        document.getElementById('btnImprimirLista').classList.remove('hidden');
+        document.getElementById('controlesModal').classList.remove('hidden');
+        modal.classList.remove('hidden');
+
+        setTimeout(() => {
+            pacientesAtuaisModal = dadosBase.filter(row => {
+                if (tipoFiltro === 'total') return true;
+                if (tipoFiltro === 'captacao') return getNum(row['Quantidade de atendimentos até 12 semanas no pré-natal']) > 0;
+                
+                if (tipoFiltro === 'ig') {
+                    let ig = getNum(row['IG (DUM) (semanas)']);
+                    let igRaw = String(row['IG (DUM) (semanas)'] || '').trim();
+                    if (valorClicado === 'Sem Registro') return igRaw === '-' || igRaw === '';
+                    if (valorClicado === '1º Trim (até 13 sem)') return ig < 14 && igRaw !== '-' && igRaw !== '';
+                    if (valorClicado === '2º Trim (14 a 27 sem)') return ig >= 14 && ig <= 27;
+                    if (valorClicado === '3º Trim (28+ sem)') return ig >= 28;
+                }
+                
+                if (tipoFiltro === 'risco') {
+                    let r = String(row['Risco gestacional'] || '').trim().toLowerCase();
+                    if (valorClicado === 'Alto') return r.includes('alto');
+                    if (valorClicado === 'Habitual') return !r.includes('alto');
+                }
+
+                if (tipoFiltro === 'consultas') {
+                    let c = getNum(row['Quantidade de atendimentos no pré-natal']);
+                    if (valorClicado === 'Menos de 7') return c < 7;
+                    if (valorClicado === '7 ou mais') return c >= 7;
+                }
+
+                if (tipoFiltro === 'odonto') {
+                    let od = getNum(row['Quantidade de atendimentos odontológicos no pré-natal']);
+                    if (valorClicado === 'Com Consulta') return od > 0;
+                    if (valorClicado === 'Sem Consulta') return od === 0;
+                }
+
+                if (tipoFiltro === 'pa_pizza' || tipoFiltro === 'antropo_pizza') {
+                    let q = getNum(tipoFiltro === 'pa_pizza' ? row['Quantidade de medições de pressão arterial'] : row['Quantidade de medições simultâneas de peso e altura']);
+                    if (valorClicado.includes('7 ou +')) return q >= 7;
+                    return q < 7;
+                }
+
+                if (tipoFiltro === 'hiv3_pizza' || tipoFiltro === 'sif3_pizza') {
+                    let col = tipoFiltro === 'hiv3_pizza' ? row['Exame de HIV no terceiro trimestre'] : (row['Exame de Sífilis no terceiro trimestre'] || row['Exame de Sifilis no terceiro trimestre']);
+                    let st = checkStatus(col);
+                    if (valorClicado === 'Realizado') return st === 'REALIZADO';
+                    if (valorClicado === 'N/A') return st === 'NAO_SE_APLICA';
+                    return st === 'PENDENTE';
+                }
+
+                if (tipoFiltro === 'dtpa_pizza') {
+                    let st = checkStatusDtpa(row['dTpa']);
+                    if (valorClicado === 'Realizada') return st === 'REALIZADO';
+                    return st === 'PENDENTE';
+                }
+
+                if (tipoFiltro === 'puerperio_pizza') {
+                    let st = checkStatus(row['Quantidade de atendimentos no puerpério']);
+                    if (valorClicado === 'Realizada' || valorClicado === 'Realizado') return st === 'REALIZADO';
+                    return st === 'PENDENTE';
+                }
+
+                if (statusStacked) {
+                    let val = '';
+                    if (tipoFiltro === 'exame1') {
+                        if (alvo === 'HIV') val = row['Exame de HIV no primeiro trimestre'];
+                        if (alvo === 'Sífilis') val = row['Exame de Sífilis no primeiro trimestre'];
+                        if (alvo === 'Hepatite B') val = row['Exame de Hepatite B no primeiro trimestre'];
+                        if (alvo === 'Hepatite C') val = row['Exame de Hepatite C no primeiro trimestre'];
+                    }
+                    let s = checkStatus(val);
+                    if (statusStacked === 'Realizado') return s === 'REALIZADO';
+                    return s === 'PENDENTE';
+                }
+
+                return false;
+            });
+
+            document.getElementById('sortTabela').value = 'default';
+            ordenarTabelaModal(); 
+        }, 50);
+    }
+
+    function abrirLayoutModalBase() {
+        document.getElementById('modalEmptyState').classList.add('hidden');
+        document.getElementById('modalTable').classList.remove('hidden');
+        document.getElementById('btnImprimirLista').classList.remove('hidden');
+        document.getElementById('controlesModal').classList.remove('hidden');
+        document.getElementById('sortTabela').value = 'default';
+        document.getElementById('pacientesModal').classList.remove('hidden');
+        ordenarTabelaModal();
+    }
+
+    function ordenarTabelaModal() {
+        const metodo = document.getElementById('sortTabela').value;
+        if (metodo === 'default') {
+            pacientesAtuaisModal.sort((a, b) => (a['Nome'] || '').localeCompare(b['Nome'] || ''));
+        } else if (metodo === 'ig_maior') {
+            pacientesAtuaisModal.sort((a, b) => getNum(b['IG (DUM) (semanas)']) - getNum(a['IG (DUM) (semanas)']));
+        } else if (metodo === 'ig_menor') {
+            pacientesAtuaisModal.sort((a, b) => getNum(a['IG (DUM) (semanas)']) - getNum(b['IG (DUM) (semanas)']));
+        } else if (metodo === 'consultas') {
+            pacientesAtuaisModal.sort((a, b) => getNum(a['Quantidade de atendimentos no pré-natal']) - getNum(b['Quantidade de atendimentos no pré-natal']));
+        }
+        renderizarTabelaModal();
+    }
+
+    function renderizarTabelaModal() {
+        const tbody = document.getElementById('modalTableBody');
+        document.getElementById('modalSubtitle').innerText = `Total: ${pacientesAtuaisModal.length} gestante(s) listada(s).`;
+        let htmlAcumulado = '';
+
+        pacientesAtuaisModal.forEach(p => {
+            let ig = String(p['IG (DUM) (semanas)'] || '-').trim();
+            let consPN = getNum(p['Quantidade de atendimentos no pré-natal']);
+            let riscoRaw = String(p['Risco gestacional'] || '').trim();
+            let consOdonto = getNum(p['Quantidade de atendimentos odontológicos no pré-natal']);
+            let captacao = getNum(p['Quantidade de atendimentos até 12 semanas no pré-natal']) > 0 ? 'Sim' : 'Não';
+            let statusVacina = checkStatusDtpa(p['dTpa']);
+            
+            let badgeRisco = riscoRaw.toLowerCase().includes('alto') 
+                ? `<span class="px-2 py-1 bg-red-100 text-red-700 font-bold rounded-full text-xs">Alto Risco</span>` 
+                : `<span class="px-2 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-full text-xs">Habitual</span>`;
+
+            let corPN = consPN < 7 ? 'text-red-600 font-bold' : 'text-emerald-600';
+            
+            let txtVacina = 'Pendente', corVacina = 'text-red-500 font-bold';
+            if(statusVacina === 'REALIZADO') { txtVacina = 'Realizada'; corVacina = 'text-emerald-600'; }
+            
+            htmlAcumulado += `
+                <tr class="border-b border-gray-100 hover:bg-pink-50 transition">
+                    <td class="p-4 font-medium text-gray-900">${p['Nome'] || 'Sem Nome'}</td>
+                    <td class="p-4 text-center">${ig} sem.</td>
+                    <td class="p-4 text-center">${badgeRisco}</td>
+                    <td class="p-4 text-center ${corPN}">${consPN}</td>
+                    <td class="p-4 text-center">${consOdonto}</td>
+                    <td class="p-4 text-center">${captacao}</td>
+                    <td class="p-4 text-center ${corVacina}">${txtVacina}</td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = htmlAcumulado;
+    }
+
+    function fecharModal() {
+        document.getElementById('pacientesModal').classList.add('hidden');
+    }
+
+    function imprimirLista() {
+        const titulo = document.getElementById('modalTitle').innerText;
+        const subtitulo = document.getElementById('modalSubtitle').innerText;
+        
+        let htmlTabelaExaustiva = `
+            <table>
+                <thead>
+                    <tr>
+                        <th style="text-align:left;">Nome</th>
+                        <th>IG</th>
+                        <th>12 s</th>
+                        <th>Cons. PN</th>
+                        <th>Odonto</th>
+                        <th>Pressão</th>
+                        <th>Antropo.</th>
+                        <th>DTpa</th>
+                        <th>HIV 1º</th>
+                        <th>Síf 1º</th>
+                        <th>HepB 1º</th>
+                        <th>HepC 1º</th>
+                        <th>HIV 3º</th>
+                        <th>Síf 3º</th>
+                        <th>Puerp.</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        const formatarStatus = (val, isDtpa = false) => {
+            let s = isDtpa ? checkStatusDtpa(val) : checkStatus(val);
+            if (s === 'REALIZADO') return '<span class="status-sim">Sim</span>';
+            if (s === 'NAO_SE_APLICA') return '<span class="status-na">N/A</span>';
+            return '<span class="status-nao">Não</span>';
+        };
+
+        pacientesAtuaisModal.forEach(p => {
+            let ig = String(p['IG (DUM) (semanas)'] || '-').trim();
+            let captacao = getNum(p['Quantidade de atendimentos até 12 semanas no pré-natal']) > 0 ? 'Sim' : 'Não';
+            let consPN = getNum(p['Quantidade de atendimentos no pré-natal']);
+            let odonto = getNum(p['Quantidade de atendimentos odontológicos no pré-natal']);
+            
+            let pa = getNum(p['Quantidade de medições de pressão arterial']);
+            let antropo = getNum(p['Quantidade de medições simultâneas de peso e altura']);
+            let dtpa = formatarStatus(p['dTpa'], true);
+            
+            let hiv1 = formatarStatus(p['Exame de HIV no primeiro trimestre']);
+            let sif1 = formatarStatus(p['Exame de Sífilis no primeiro trimestre']);
+            let hepb = formatarStatus(p['Exame de Hepatite B no primeiro trimestre']);
+            let hepc = formatarStatus(p['Exame de Hepatite C no primeiro trimestre']);
+            
+            let hiv3 = formatarStatus(p['Exame de HIV no terceiro trimestre']);
+            let sif3 = formatarStatus(p['Exame de Sífilis no terceiro trimestre'] || p['Exame de Sifilis no terceiro trimestre']);
+            let puerp = formatarStatus(p['Quantidade de atendimentos no puerpério']);
+
+            htmlTabelaExaustiva += `
+                <tr>
+                    <td style="text-align:left;">${p['Nome'] || 'Sem Nome'}</td>
+                    <td>${ig}</td>
+                    <td>${captacao}</td>
+                    <td><strong>${consPN}</strong></td>
+                    <td>${odonto}</td>
+                    <td><strong>${pa}</strong></td>
+                    <td><strong>${antropo}</strong></td>
+                    <td>${dtpa}</td>
+                    <td>${hiv1}</td>
+                    <td>${sif1}</td>
+                    <td>${hepb}</td>
+                    <td>${hepc}</td>
+                    <td>${hiv3}</td>
+                    <td>${sif3}</td>
+                    <td>${puerp}</td>
+                </tr>
+            `;
+        });
+
+        htmlTabelaExaustiva += `</tbody></table>`;
+
+        const janelaImpressao = window.open('', '_blank', 'width=1000,height=700');
+        janelaImpressao.document.write(`
+            <html>
+            <head>
+                <title>Relatório - ${titulo}</title>
+                <style>
+                    body { font-family: 'Arial', sans-serif; padding: 20px; color: #333; }
+                    h1 { margin-bottom: 5px; color: #831843; font-size: 22px; }
+                    p { margin-top: 0; color: #666; font-size: 13px; margin-bottom: 20px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10px; }
+                    th, td { border: 1px solid #ddd; padding: 4px; text-align: center; }
+                    th { background-color: #fce7f3; color: #831843; font-weight: bold; font-size: 11px;}
+                    tr:nth-child(even) { background-color: #fdf2f8; }
+                    .status-sim { color: #166534; font-weight: bold; }
+                    .status-nao { color: #991b1b; font-weight: bold; }
+                    .status-na { color: #6b7280; font-style: italic; }
+                    @media print { body { padding: 0; } @page { size: landscape; margin: 10mm; } }
+                </style>
+            </head>
+            <body>
+                <h1>${titulo}</h1>
+                <p>Relatório Completo de Gestantes - ${subtitulo}</p>
+                ${htmlTabelaExaustiva}
+            </body>
+            </html>
+        `);
+        janelaImpressao.document.close();
+        janelaImpressao.focus();
+        setTimeout(() => { janelaImpressao.print(); janelaImpressao.close(); }, 700);
+    }
+</script>
+</body>
+</html>
