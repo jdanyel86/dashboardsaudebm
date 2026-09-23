@@ -1,67 +1,96 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Saúde da Gestante</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Papa Parse para ler CSV -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <!-- Papa Parse para ler CSV -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <!-- Script Anti-FOUC -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        body { font-family: 'Inter', sans-serif; } 
+        .card { border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 20px; transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, border-color 0.3s; }
+        
+        /* Tema Claro: Cartões */
+        .card { background: white; border: 1px solid #e2e8f0; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.05); border-color: #cbd5e1; }
+        
+        /* Tema Escuro: Cartões (Preto Neutro) */
+        .dark .card { background: #121212; border-color: #27272a; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5); }
+        .dark .card:hover { border-color: #3f3f46; box-shadow: 0 10px 15px rgba(0,0,0,0.6); }
+
         .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
         .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+        
+        /* Scrollbar Claro */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Scrollbar Escuro (Preto) */
+        .dark ::-webkit-scrollbar-track { background: #000000; }
+        .dark ::-webkit-scrollbar-thumb { background: #27272a; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
     </style>
 </head>
-<body class="text-gray-800 relative">
+<body class="text-gray-800 dark:text-gray-200 bg-slate-50 dark:bg-black transition-colors duration-300 relative">
 
 <div class="flex h-screen overflow-hidden">
     <!-- Sidebar -->
-    <aside class="w-64 bg-pink-800 text-white flex-col transition-all duration-300 hidden md:flex shadow-xl overflow-y-auto z-20">
-        <div class="p-6 text-2xl font-bold border-b border-pink-700 text-center flex items-center justify-center">
-            <i class="fas fa-baby mr-3 text-pink-300"></i> PSF 1
+    <aside class="w-64 bg-white dark:bg-black text-gray-700 dark:text-gray-300 flex-col transition-colors duration-300 hidden md:flex shadow-sm overflow-y-auto z-20 border-r border-gray-200 dark:border-zinc-900">
+        <div class="p-6 text-2xl font-bold border-b border-gray-100 dark:border-zinc-900 text-center flex items-center justify-center text-gray-800 dark:text-gray-100">
+            <img src="logo 01.png" alt="Logo PSF 1" class="h-8 mr-3">
+            PSF 1
         </div>
-        <nav class="flex-1 p-4 space-y-3 mt-4">
-            <a href="index.html" class="flex items-center p-3 bg-indigo-800 rounded-lg text-white font-medium">
+        <nav class="flex-1 p-4 space-y-2 mt-4">
+            <a href="index.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Home
             </a>
-            <a href="Gestantes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Gestantes.html" class="flex items-center p-3 bg-pink-50 dark:bg-pink-950/40 rounded-lg text-pink-700 dark:text-pink-400 font-bold border border-pink-100 dark:border-pink-900/50 shadow-sm transition">
                 Gestantes
             </a>
-            <a href="Infantil.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Infantil.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                Crianças
             </a>
-            <a href="Diabeticos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Diabeticos.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Diabéticos
             </a>
-            <a href="Hipertensos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Hipertensos.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Hipertensos
             </a>
-            <a href="Mulher.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Mulher.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Mulher
             </a>
-            <a href="Idosos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Idosos.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Idosos
             </a>
-            <a href="agentes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="agentes.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 ACS
             </a>
-            <a href="odonto.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="odonto.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Odonto
             </a>
         </nav>
-        <div class="p-4 text-xs text-pink-300 text-center border-t border-pink-700">
+        <div class="p-4 text-xs text-gray-400 dark:text-zinc-500 font-medium text-center border-t border-gray-100 dark:border-zinc-900">
             José Danyel Siqueira do Nascimento
         </div>
     </aside>
@@ -70,191 +99,302 @@
     <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Acompanhamento de Gestantes</h1>
-                <p class="text-gray-500 mt-1 text-sm md:text-base">Monitoramento de Pré-Natal, Exames e Puerpério</p>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Acompanhamento de Gestantes</h1>
+                <p class="text-gray-500 dark:text-zinc-400 mt-1 text-sm md:text-base font-medium">Monitorização de Pré-Natal, Exames e Puerpério</p>
             </div>
             
             <div class="flex items-center gap-2 flex-wrap">
+                <!-- Botão Toggle Tema Escuro -->
+                <button id="themeToggle" class="bg-white dark:bg-zinc-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-zinc-800 px-4 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition shadow-sm flex items-center justify-center font-bold">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
+
                 <div class="file-upload-wrapper">
-                    <button class="bg-pink-600 text-white px-5 py-2.5 rounded-lg hover:bg-pink-700 transition shadow flex items-center cursor-pointer text-sm font-medium">
+                    <button class="bg-pink-600 dark:bg-pink-700 text-white px-5 py-2.5 rounded-lg hover:bg-pink-700 dark:hover:bg-pink-800 transition shadow flex items-center cursor-pointer text-sm font-bold">
                         <i class="fas fa-upload mr-2"></i> Carregar CSV e-SUS
                     </button>
                     <input type="file" id="csvFileInput" accept=".csv" />
                 </div>
-                <button id="btnClearStorage" onclick="limparDadosLocais()" class="hidden bg-gray-200 text-gray-700 px-3 py-2.5 rounded-lg hover:bg-red-100 hover:text-red-600 transition text-sm" title="Remover planilha salva">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
             </div>
         </header>
 
         <!-- Barra de Busca -->
-        <div class="card mb-4 border border-pink-100 p-4">
+        <div class="card mb-4 border border-gray-200 dark:border-zinc-800 p-4 bg-white dark:bg-zinc-900 shadow-sm">
             <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
                 <div class="relative flex-1">
-                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400 dark:text-zinc-500"></i>
                     <input id="buscaPaciente" type="search" placeholder="Buscar gestante por nome..."
-                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-pink-200 focus:border-pink-500 text-sm"
+                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg outline-none focus:ring-2 focus:ring-pink-500 text-sm bg-gray-50 dark:bg-black text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-zinc-500 font-medium transition"
                            oninput="buscarPaciente(this.value)">
                 </div>
-                <button onclick="abrirResultadosBusca()" class="bg-pink-50 text-pink-800 border border-pink-200 px-4 py-2.5 rounded-lg hover:bg-pink-100 text-sm font-semibold transition">
-                    <i class="fas fa-list mr-1"></i> Ver Resultados
+                <button onclick="abrirResultadosBusca()" class="bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-zinc-700 px-4 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 text-sm font-bold transition shadow-sm">
+                    <i class="fas fa-list mr-1 text-gray-400 dark:text-zinc-400"></i> Ver Resultados
                 </button>
             </div>
-            <div id="resultadoBusca" class="hidden mt-3 p-3 bg-gray-50 rounded border border-gray-200"></div>
+            <div id="resultadoBusca" class="hidden mt-3 p-3 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-zinc-800"></div>
         </div>
 
         <!-- Filtros de Microárea -->
-        <div class="bg-white p-4 rounded-xl shadow-sm mb-8 border border-pink-100">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3"><i class="fas fa-filter mr-1"></i> Filtrar por Microárea:</p>
+        <div class="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm mb-8 border border-gray-200 dark:border-zinc-800 transition-colors duration-300">
+            <p class="text-xs font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-3"><i class="fas fa-filter mr-1 text-gray-400"></i> Filtrar por Microárea:</p>
             <div id="microareaButtonsContainer" class="flex flex-wrap gap-2">
-                <span class="text-sm text-gray-500 italic">Faça o upload do CSV para carregar as microáreas...</span>
+                <span class="text-sm text-gray-400 dark:text-zinc-500 font-medium italic">Faça o upload do CSV para carregar as microáreas...</span>
             </div>
         </div>
 
-        <!-- KPI Cards -->
+        <!-- KPI Cards Principais -->
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-8">
-            <div class="card border-l-4 border-pink-500 flex items-center justify-between cursor-pointer hover:bg-pink-50" onclick="abrirModalFiltro('TODAS', 'total')" title="Clique para ver todas">
+            <div class="card flex items-center justify-between cursor-pointer border-l-4 border-pink-500 dark:border-pink-600" onclick="abrirModalFiltro('TODAS', 'total')" title="Clique para ver todas">
                 <div>
-                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Total de Gestantes</p>
-                    <h2 id="kpi-total" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
+                    <p class="text-xs md:text-sm text-gray-500 dark:text-zinc-400 font-bold mb-1 uppercase">Total de Gestantes</p>
+                    <h2 id="kpi-total" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</h2>
                 </div>
-                <div class="p-3 md:p-4 bg-pink-100 rounded-full text-pink-600">
+                <div class="p-3 md:p-4 bg-pink-50 dark:bg-pink-950/50 rounded-full text-pink-600 dark:text-pink-400">
                     <i class="fas fa-users fa-xl"></i>
                 </div>
             </div>
             
-            <div class="card border-l-4 border-indigo-500 flex items-center justify-between cursor-pointer hover:bg-indigo-50" onclick="abrirModalFiltro('Com Captação (< 12 sem)', 'captacao')">
+            <div class="card flex items-center justify-between cursor-pointer border-l-4 border-indigo-500 dark:border-indigo-500" onclick="abrirModalFiltro('Com Captação (< 12 sem)', 'captacao')">
                 <div>
-                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Captação Precoce</p>
-                    <h2 id="kpi-captacao" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
-                    <p id="kpi-captacao-sub" class="text-xs text-indigo-600 mt-1">Cons. até 12 sem.</p>
+                    <p class="text-xs md:text-sm text-gray-500 dark:text-zinc-400 font-bold mb-1 uppercase">Captação Precoce</p>
+                    <h2 id="kpi-captacao" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</h2>
+                    <p id="kpi-captacao-sub" class="text-xs text-indigo-600 dark:text-indigo-400 mt-1 font-semibold">Cons. até 12 sem.</p>
                 </div>
-                <div class="p-3 md:p-4 bg-indigo-50 rounded-full text-indigo-500">
+                <div class="p-3 md:p-4 bg-indigo-50 dark:bg-indigo-950/50 rounded-full text-indigo-500 dark:text-indigo-400">
                     <i class="fas fa-calendar-check fa-xl"></i>
                 </div>
             </div>
 
-            <div class="card border-l-4 border-emerald-500 flex items-center justify-between cursor-pointer hover:bg-emerald-50" onclick="abrirModalFiltro('7 ou mais', 'consultas')">
+            <div class="card flex items-center justify-between cursor-pointer border-l-4 border-emerald-500 dark:border-emerald-500" onclick="abrirModalFiltro('7 ou mais', 'consultas')">
                 <div>
-                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Consultas Adequadas</p>
-                    <h2 id="kpi-consultas" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
-                    <p id="kpi-consultas-sub" class="text-xs text-emerald-600 mt-1">7 ou + consultas</p>
+                    <p class="text-xs md:text-sm text-gray-500 dark:text-zinc-400 font-bold mb-1 uppercase">Consultas Adequadas</p>
+                    <h2 id="kpi-consultas" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</h2>
+                    <p id="kpi-consultas-sub" class="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-semibold">7 ou + consultas</p>
                 </div>
-                <div class="p-3 md:p-4 bg-emerald-50 rounded-full text-emerald-500">
+                <div class="p-3 md:p-4 bg-emerald-50 dark:bg-emerald-950/50 rounded-full text-emerald-500 dark:text-emerald-400">
                     <i class="fas fa-user-md fa-xl"></i>
                 </div>
             </div>
 
-            <div class="card border-l-4 border-red-500 flex items-center justify-between cursor-pointer hover:bg-red-50" onclick="abrirModalFiltro('Alto', 'risco')">
+            <div class="card flex items-center justify-between cursor-pointer border-l-4 border-red-500 dark:border-red-500" onclick="abrirModalFiltro('Alto', 'risco')">
                 <div>
-                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Alto Risco</p>
-                    <h2 id="kpi-risco" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
-                    <p class="text-xs text-red-600 mt-1">Atenção Especial</p>
+                    <p class="text-xs md:text-sm text-gray-500 dark:text-zinc-400 font-bold mb-1 uppercase">Alto Risco</p>
+                    <h2 id="kpi-risco" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</h2>
+                    <p class="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">Atenção Especial</p>
                 </div>
-                <div class="p-3 md:p-4 bg-red-50 rounded-full text-red-500">
+                <div class="p-3 md:p-4 bg-red-50 dark:bg-red-950/50 rounded-full text-red-500 dark:text-red-400">
                     <i class="fas fa-exclamation-triangle fa-xl"></i>
                 </div>
             </div>
         </div>
 
-        <!-- Bloco 1: Idade Gestacional e Risco -->
-        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-info-circle mr-2 text-pink-600"></i> Perfil Gestacional</h3>
-        <p class="text-sm text-gray-500 mb-4">Dica: <b>Clique nas fatias ou barras de qualquer gráfico</b> para abrir a lista de pacientes correspondentes.</p>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <p class="text-sm text-gray-600 dark:text-zinc-300 mb-6 bg-white dark:bg-zinc-900 p-3 rounded-lg border border-gray-200 dark:border-zinc-800 font-medium shadow-sm transition-colors duration-300"><i class="fas fa-info-circle text-blue-500 dark:text-blue-400 mr-2"></i><b>Dica:</b> Clique em qualquer bloco de KPI abaixo para ver a lista de pacientes correspondentes.</p>
+
+        <!-- TEMA 1: Perfil Gestacional e Risco -->
+        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center"><i class="fas fa-chart-pie mr-2 text-pink-600 dark:text-pink-500"></i> Perfil Gestacional</h3>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <div class="card text-center cursor-pointer p-4 bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-900/50" onclick="abrirModalFiltro('1º Trim (até 13 sem)', 'ig')">
+                <p class="text-[11px] text-sky-800 dark:text-sky-300 font-bold mb-1 uppercase">1º Trimestre</p>
+                <h2 id="kpi-ig-1" class="text-3xl font-bold text-sky-700 dark:text-sky-400">0</h2>
+            </div>
+            <div class="card text-center cursor-pointer p-4 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50" onclick="abrirModalFiltro('2º Trim (14 a 27 sem)', 'ig')">
+                <p class="text-[11px] text-amber-800 dark:text-amber-300 font-bold mb-1 uppercase">2º Trimestre</p>
+                <h2 id="kpi-ig-2" class="text-3xl font-bold text-amber-700 dark:text-amber-400">0</h2>
+            </div>
+            <div class="card text-center cursor-pointer p-4 bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-900/50" onclick="abrirModalFiltro('3º Trim (28+ sem)', 'ig')">
+                <p class="text-[11px] text-indigo-800 dark:text-indigo-300 font-bold mb-1 uppercase">3º Trimestre</p>
+                <h2 id="kpi-ig-3" class="text-3xl font-bold text-indigo-700 dark:text-indigo-400">0</h2>
+            </div>
+            <div class="card text-center cursor-pointer p-4 bg-gray-50 dark:bg-zinc-800/50 border-gray-200 dark:border-zinc-700" onclick="abrirModalFiltro('Sem Registro', 'ig')">
+                <p class="text-[11px] text-gray-600 dark:text-zinc-300 font-bold mb-1 uppercase">Sem Registro IG</p>
+                <h2 id="kpi-ig-sr" class="text-3xl font-bold text-gray-700 dark:text-gray-300">0</h2>
+            </div>
+            <div class="card text-center cursor-pointer p-4 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50" onclick="abrirModalFiltro('Habitual', 'risco')">
+                <p class="text-[11px] text-emerald-800 dark:text-emerald-300 font-bold mb-1 uppercase">Risco Habitual</p>
+                <h2 id="kpi-risco-hab" class="text-3xl font-bold text-emerald-700 dark:text-emerald-400">0</h2>
+            </div>
+        </div>
+
+        <!-- TEMA 2: Consultas -->
+        <h3 id="consultas" class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center mt-10"><i class="fas fa-stethoscope mr-2 text-pink-600 dark:text-pink-500"></i> Consultas (Pré-Natal e Odonto)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Idade Gestacional DUM (Trimestre)</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="igChart"></canvas>
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">Consultas de Pré-Natal</h4>
+                <div class="flex justify-around gap-3">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 flex-1 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('7 ou mais', 'consultas')">
+                        <p class="text-xs text-emerald-600 dark:text-emerald-400 uppercase font-bold">7 ou Mais</p>
+                        <p id="kpi-pn-maior7" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 flex-1 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Menos de 7', 'consultas')">
+                        <p class="text-xs text-red-600 dark:text-red-400 uppercase font-bold">Menos de 7</p>
+                        <p id="kpi-pn-menor7" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
                 </div>
             </div>
             <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Risco Gestacional</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="riscoChart"></canvas>
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">Consultas Odontológicas</h4>
+                <div class="flex justify-around gap-3">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 flex-1 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Com Consulta', 'odonto')">
+                        <p class="text-xs text-indigo-600 dark:text-indigo-400 uppercase font-bold">Realizada</p>
+                        <p id="kpi-odonto-com" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 flex-1 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Sem Consulta', 'odonto')">
+                        <p class="text-xs text-gray-500 dark:text-zinc-400 uppercase font-bold">Pendente</p>
+                        <p id="kpi-odonto-sem" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Bloco 2: Consultas -->
-        <h3 id="consultas" class="text-xl font-bold text-gray-800 mb-4 flex items-center mt-10"><i class="fas fa-stethoscope mr-2 text-pink-600"></i> Consultas</h3>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="card">
-                 <h3 class="text-md font-bold text-gray-700 mb-2 text-center">Total de Consultas Med/Enf (Pré-Natal)</h3>
-                 <div class="relative h-72 w-full">
-                     <canvas id="consultasPNChart"></canvas>
-                 </div>
-            </div>
-            <div class="card">
-                 <h3 class="text-md font-bold text-gray-700 mb-2 text-center">Consultas Odontológicas</h3>
-                 <div class="relative h-72 w-full pb-4">
-                     <canvas id="odontoChart"></canvas>
-                 </div>
-            </div>
-        </div>
-
-        <!-- Bloco 3: Exames -->
-        <h3 id="exames" class="text-xl font-bold text-gray-800 mb-4 flex items-center mt-10"><i class="fas fa-vial mr-2 text-pink-600"></i> Exames Laboratoriais</h3>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Exames 1º Trimestre</h3>
-                <div class="relative h-72 w-full">
-                    <canvas id="exames1TrimChart"></canvas>
+        <!-- TEMA 3: Exames 1º Trimestre -->
+        <h3 id="exames1" class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center mt-10"><i class="fas fa-vial mr-2 text-pink-600 dark:text-pink-500"></i> Exames 1º Trimestre</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="card p-3 md:p-5">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">HIV</h4>
+                <div class="flex justify-between gap-2">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('HIV|Realizado', 'exame1')">
+                        <p class="text-[10px] uppercase text-emerald-700 dark:text-emerald-400 font-bold">Realizado</p>
+                        <p id="kpi-hiv1-r" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('HIV|Pendente', 'exame1')">
+                        <p class="text-[10px] uppercase text-red-700 dark:text-red-400 font-bold">Pendente</p>
+                        <p id="kpi-hiv1-p" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
                 </div>
             </div>
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Exame HIV (3º Trimestre)</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="hiv3Chart"></canvas>
+            <div class="card p-3 md:p-5">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">Sífilis</h4>
+                <div class="flex justify-between gap-2">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('Sífilis|Realizado', 'exame1')">
+                        <p class="text-[10px] uppercase text-emerald-700 dark:text-emerald-400 font-bold">Realizado</p>
+                        <p id="kpi-sif1-r" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('Sífilis|Pendente', 'exame1')">
+                        <p class="text-[10px] uppercase text-red-700 dark:text-red-400 font-bold">Pendente</p>
+                        <p id="kpi-sif1-p" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Exame Sífilis (3º Trimestre)</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="sif3Chart"></canvas>
+            <div class="card p-3 md:p-5">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">Hepatite B</h4>
+                <div class="flex justify-between gap-2">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('Hepatite B|Realizado', 'exame1')">
+                        <p class="text-[10px] uppercase text-emerald-700 dark:text-emerald-400 font-bold">Realizado</p>
+                        <p id="kpi-hepb-r" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('Hepatite B|Pendente', 'exame1')">
+                        <p class="text-[10px] uppercase text-red-700 dark:text-red-400 font-bold">Pendente</p>
+                        <p id="kpi-hepb-p" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
                 </div>
             </div>
-            <div class="card">
-                <div class="flex flex-col items-center justify-center h-full text-center p-6 bg-pink-50 rounded-xl border border-pink-100">
-                    <i class="fas fa-heartbeat text-pink-500 fa-3x mb-3"></i>
-                    <h4 class="font-bold text-pink-900 text-lg">Painel de Exames</h4>
-                    <p class="text-sm text-gray-600 mt-1">Acompanhe os resultados laboratoriais e preventivos de forma individualizada para cada gestante da sua microárea.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bloco 4: Procedimentos e Aferições (Painéis Individuais) -->
-        <h3 id="procedimentos" class="text-xl font-bold text-gray-800 mb-4 flex items-center mt-10"><i class="fas fa-syringe mr-2 text-pink-600"></i> Aferições, Vacinas e Puerpério</h3>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Pressão Arterial (Meta: 7 ou +)</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="paChart"></canvas>
-                </div>
-            </div>
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Antropometria (Peso/Altura) (Meta: 7 ou +)</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="antropoChart"></canvas>
+            <div class="card p-3 md:p-5">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">Hepatite C</h4>
+                <div class="flex justify-between gap-2">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('Hepatite C|Realizado', 'exame1')">
+                        <p class="text-[10px] uppercase text-emerald-700 dark:text-emerald-400 font-bold">Realizado</p>
+                        <p id="kpi-hepc-r" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('Hepatite C|Pendente', 'exame1')">
+                        <p class="text-[10px] uppercase text-red-700 dark:text-red-400 font-bold">Pendente</p>
+                        <p id="kpi-hepc-p" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- TEMA 4: Exames 3º Trimestre -->
+        <h3 id="exames3" class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center mt-10"><i class="fas fa-microscope mr-2 text-pink-600 dark:text-pink-500"></i> Exames 3º Trimestre</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Vacina DTpa</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="dtpaChart"></canvas>
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">Exame HIV (3º Trimestre)</h4>
+                <div class="flex justify-between gap-3">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 flex-1 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Realizado', 'hiv3_pizza')">
+                        <p class="text-xs uppercase text-emerald-700 dark:text-emerald-400 font-bold">Realizado</p>
+                        <p id="kpi-hiv3-r" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 flex-1 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Pendente', 'hiv3_pizza')">
+                        <p class="text-xs uppercase text-red-700 dark:text-red-400 font-bold">Pendente</p>
+                        <p id="kpi-hiv3-p" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 flex-1 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('N/A', 'hiv3_pizza')">
+                        <p class="text-xs uppercase text-amber-700 dark:text-amber-400 font-bold">N/A</p>
+                        <p id="kpi-hiv3-na" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
                 </div>
             </div>
             <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Consulta Puerperal</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="puerperioChart"></canvas>
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">Exame Sífilis (3º Trimestre)</h4>
+                <div class="flex justify-between gap-3">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 flex-1 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Realizado', 'sif3_pizza')">
+                        <p class="text-xs uppercase text-emerald-700 dark:text-emerald-400 font-bold">Realizado</p>
+                        <p id="kpi-sif3-r" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 flex-1 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Pendente', 'sif3_pizza')">
+                        <p class="text-xs uppercase text-red-700 dark:text-red-400 font-bold">Pendente</p>
+                        <p id="kpi-sif3-p" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 flex-1 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('N/A', 'sif3_pizza')">
+                        <p class="text-xs uppercase text-amber-700 dark:text-amber-400 font-bold">N/A</p>
+                        <p id="kpi-sif3-na" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEMA 5: Aferições, Vacinas e Puerpério -->
+        <h3 id="procedimentos" class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center mt-10"><i class="fas fa-syringe mr-2 text-pink-600 dark:text-pink-500"></i> Aferições, Vacinas e Puerpério</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="card p-3 md:p-5">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center text-sm">Pressão Arterial</h4>
+                <div class="flex justify-between gap-2">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('7 ou + (Ideal)', 'pa_pizza')">
+                        <p class="text-[10px] uppercase text-emerald-700 dark:text-emerald-400 font-bold">7 ou +</p>
+                        <p id="kpi-pa-ideal" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('Menos de 7', 'pa_pizza')">
+                        <p class="text-[10px] uppercase text-red-700 dark:text-red-400 font-bold">< 7</p>
+                        <p id="kpi-pa-alerta" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card p-3 md:p-5">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center text-sm">Antropometria</h4>
+                <div class="flex justify-between gap-2">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('7 ou + (Ideal)', 'antropo_pizza')">
+                        <p class="text-[10px] uppercase text-emerald-700 dark:text-emerald-400 font-bold">7 ou +</p>
+                        <p id="kpi-antropo-ideal" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('Menos de 7', 'antropo_pizza')">
+                        <p class="text-[10px] uppercase text-red-700 dark:text-red-400 font-bold">< 7</p>
+                        <p id="kpi-antropo-alerta" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card p-3 md:p-5">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center text-sm">Vacina DTpa</h4>
+                <div class="flex justify-between gap-2">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('Realizada', 'dtpa_pizza')">
+                        <p class="text-[10px] uppercase text-indigo-700 dark:text-indigo-400 font-bold">Realizada</p>
+                        <p id="kpi-dtpa-r" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('Pendente', 'dtpa_pizza')">
+                        <p class="text-[10px] uppercase text-gray-500 dark:text-zinc-400 font-bold">Pendente</p>
+                        <p id="kpi-dtpa-p" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card p-3 md:p-5">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center text-sm">Consulta Puerperal</h4>
+                <div class="flex justify-between gap-2">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('Realizada', 'puerperio_pizza')">
+                        <p class="text-[10px] uppercase text-indigo-700 dark:text-indigo-400 font-bold">Realizada</p>
+                        <p id="kpi-puerp-r" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 p-2 flex-1 text-center rounded bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 transition" onclick="abrirModalFiltro('Pendente', 'puerperio_pizza')">
+                        <p class="text-[10px] uppercase text-gray-500 dark:text-zinc-400 font-bold">Pendente</p>
+                        <p id="kpi-puerp-p" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -264,57 +404,57 @@
 <!-- ============================================== -->
 <!-- MODAL: LISTA DE PACIENTES -->
 <!-- ============================================== -->
-<div id="pacientesModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col overflow-hidden">
+<div id="pacientesModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-zinc-800">
         
-        <div class="p-5 border-b border-gray-200 bg-pink-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-20">
+        <div class="p-5 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-black flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-20">
             <div>
-                <h2 class="text-2xl font-bold text-pink-900" id="modalTitle">Gestantes</h2>
-                <p class="text-sm text-gray-600 mt-1" id="modalSubtitle">Carregando...</p>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white" id="modalTitle">Gestantes</h2>
+                <p class="text-sm text-gray-500 dark:text-zinc-400 mt-1 font-medium" id="modalSubtitle">Carregando...</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-3 w-full md:w-auto" id="controlesModal">
-                <label for="sortTabela" class="text-sm font-medium text-gray-700 whitespace-nowrap"><i class="fas fa-sort-amount-down-alt mr-1"></i> Ordenar:</label>
-                <select id="sortTabela" onchange="ordenarTabelaModal()" class="text-sm border border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500 p-2 bg-white">
+                <label for="sortTabela" class="text-sm font-bold text-gray-700 dark:text-zinc-300 whitespace-nowrap"><i class="fas fa-sort-amount-down-alt mr-1"></i> Ordenar:</label>
+                <select id="sortTabela" onchange="ordenarTabelaModal()" class="text-sm border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm focus:ring-pink-500 p-2 bg-white dark:bg-zinc-800 text-gray-800 dark:text-gray-200 font-medium outline-none">
                     <option value="default">Por Nome (A-Z)</option>
                     <option value="ig_maior">Maior Idade Gestacional (IG)</option>
                     <option value="ig_menor">Menor Idade Gestacional (IG)</option>
                     <option value="consultas">Menos Consultas (Risco)</option>
                 </select>
 
-                <button onclick="fecharModal()" class="text-gray-500 hover:text-red-500 transition focus:outline-none ml-2">
-                    <i class="fas fa-times fa-xl"></i>
+                <button onclick="fecharModal()" class="text-gray-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition focus:outline-none ml-2 bg-gray-200 dark:bg-zinc-800 hover:bg-red-100 dark:hover:bg-red-950/50 rounded-full w-8 h-8 flex items-center justify-center">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         </div>
         
-        <div class="p-0 flex-1 overflow-auto bg-white relative z-10">
-            <div id="modalEmptyState" class="hidden p-10 text-center text-gray-500">
-                <i class="fas fa-file-csv fa-3x mb-4 text-gray-300"></i>
-                <p class="text-lg">Faça o upload do seu arquivo CSV primeiro.</p>
+        <div class="p-0 flex-1 overflow-auto bg-white dark:bg-zinc-900 relative z-10">
+            <div id="modalEmptyState" class="hidden p-10 text-center text-gray-500 dark:text-zinc-500">
+                <i class="fas fa-file-csv fa-3x mb-4 text-gray-300 dark:text-zinc-800"></i>
+                <p class="text-lg font-medium">Faça o upload do seu arquivo CSV primeiro.</p>
             </div>
             
             <table id="modalTable" class="w-full text-left border-collapse min-w-[800px]">
-                <thead class="bg-pink-100 text-pink-900 sticky top-0 z-10 shadow-sm text-xs uppercase font-bold tracking-wider">
+                <thead class="bg-gray-100 dark:bg-black text-gray-700 dark:text-zinc-300 sticky top-0 z-10 shadow-sm text-xs uppercase font-bold tracking-wider">
                     <tr>
-                        <th class="p-4 border-b">Nome</th>
-                        <th class="p-4 border-b text-center">IG (DUM)</th>
-                        <th class="p-4 border-b text-center">Risco</th>
-                        <th class="p-4 border-b text-center">Cons. Pré-Natal</th>
-                        <th class="p-4 border-b text-center">Cons. Odonto</th>
-                        <th class="p-4 border-b text-center">Captação < 12 sem</th>
-                        <th class="p-4 border-b text-center">Vacina DTpa</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800">Nome</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">IG (DUM)</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">Risco</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">Cons. Pré-Natal</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">Cons. Odonto</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">Captação < 12 sem</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">Vacina DTpa</th>
                     </tr>
                 </thead>
-                <tbody id="modalTableBody" class="text-sm text-gray-700 divide-y divide-gray-100"></tbody>
+                <tbody id="modalTableBody" class="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-zinc-800 font-medium"></tbody>
             </table>
         </div>
         
-        <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end items-center gap-3 z-20">
-            <button id="btnImprimirLista" onclick="imprimirLista()" class="hidden bg-pink-600 text-white px-5 py-2.5 rounded-lg hover:bg-pink-700 transition font-medium flex items-center shadow-sm">
+        <div class="p-4 border-t border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-black flex justify-end items-center gap-3 z-20">
+            <button id="btnImprimirLista" onclick="imprimirLista()" class="hidden bg-gray-800 dark:bg-pink-700 text-white px-5 py-2.5 rounded-lg hover:bg-gray-900 dark:hover:bg-pink-800 transition font-bold flex items-center shadow-sm">
                 <i class="fas fa-print mr-2"></i> Relatório Completo (Imprimir)
             </button>
-            <button onclick="fecharModal()" class="bg-gray-200 text-gray-800 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition font-medium">
+            <button onclick="fecharModal()" class="bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-200 px-6 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition font-bold shadow-sm">
                 Fechar
             </button>
         </div>
@@ -322,18 +462,30 @@
 </div>
 
 <script>
+    // === Lógica do Tema Escuro ===
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    if (document.documentElement.classList.contains('dark')) {
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+    }
+
+    themeToggleBtn.addEventListener('click', function() {
+        document.documentElement.classList.toggle('dark');
+        if (document.documentElement.classList.contains('dark')) {
+            localStorage.setItem('theme', 'dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        } else {
+            localStorage.setItem('theme', 'light');
+            themeIcon.classList.replace('fa-sun', 'fa-moon');
+        }
+    });
+
     let dadosBrutosCSV = []; 
     let microareaSelecionada = 'TODAS'; 
     let resultadosBusca = []; 
     let pacientesAtuaisModal = [];
     let tipoFiltroAtivo = ''; 
-    let charts = {};
-
-    const defaultOptions = { 
-        responsive: true, maintainAspectRatio: false, 
-        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, 
-        animation: { duration: 800 } 
-    };
     
     function getFiltrados() {
         if (microareaSelecionada === 'TODAS') return dadosBrutosCSV;
@@ -348,9 +500,6 @@
         return isNaN(n) ? 0 : n;
     };
 
-    // Corrige nomes de coluna vindos com parênteses desbalanceados no cabeçalho
-    // (ex.: "Exame de Sífilis no primeiro trimestre)"), sem afetar cabeçalhos
-    // legítimos com parênteses balanceados (ex.: "IG (DUM) (semanas)").
     function normalizeHeaderName(h) {
         let header = String(h).trim();
         let opens = (header.match(/\(/g) || []).length;
@@ -364,7 +513,6 @@
 
     function normalizeRows(rows) {
         if (!Array.isArray(rows) || rows.length === 0) return rows;
-        // Só remapeia se alguma chave realmente precisar de correção (evita custo desnecessário)
         const sampleKeys = Object.keys(rows[0] || {});
         const needsFix = sampleKeys.some(k => normalizeHeaderName(k) !== k);
         if (!needsFix) return rows;
@@ -377,7 +525,6 @@
         });
     }
 
-    // Nova Regra DTpa: NAO_SE_APLICA, -, vazio, etc. contam como PENDENTE; qualquer outro valor/texto é REALIZADO
     const checkStatusDtpa = (val) => {
         if (!val) return 'PENDENTE';
         let s = String(val).trim().toUpperCase();
@@ -394,100 +541,12 @@
         return 'PENDENTE'; 
     };
 
-    function buildClickableChart(id, type, config, filterName) {
-        let opt = { ...defaultOptions, ...config.options };
-        opt.onHover = (event, chartElement) => { 
-            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default'; 
-        };
-        opt.onClick = (event, elements, chart) => {
-            if (elements.length > 0) {
-                const el = elements[0];
-                const label = chart.data.labels[el.index];
-                if (chart.data.datasets.length > 1) {
-                    const datasetLabel = chart.data.datasets[el.datasetIndex].label; 
-                    abrirModalFiltro(`${label}|${datasetLabel}`, filterName); 
-                } else {
-                    abrirModalFiltro(label, filterName); 
-                }
-            }
-        };
-        return new Chart(document.getElementById(id), { type: type, data: config.data, options: opt });
-    }
-
-    function initCharts() {
-        charts.igChart = buildClickableChart('igChart', 'doughnut', {
-            data: { labels: ['1º Trim (até 13 sem)', '2º Trim (14 a 27 sem)', '3º Trim (28+ sem)', 'Sem Registro'], datasets: [{ data: [0,0,0,0], backgroundColor: ['#38bdf8', '#fbbf24', '#f43f5e', '#94a3b8'], borderWidth: 2 }] },
-            options: { cutout: '60%' }
-        }, 'ig');
-
-        charts.riscoChart = buildClickableChart('riscoChart', 'pie', {
-            data: { labels: ['Habitual', 'Alto'], datasets: [{ data: [0,0], backgroundColor: ['#10b981', '#ef4444'], borderWidth: 2 }] }
-        }, 'risco');
-
-        charts.consultasPNChart = buildClickableChart('consultasPNChart', 'bar', {
-            data: { 
-                labels: ['Menos de 7', '7 ou mais'], 
-                datasets: [{ label: 'Gestantes', data: [0,0], backgroundColor: ['#f43f5e', '#10b981'], borderRadius: 4 }] 
-            },
-            options: { plugins: { legend: { display: false } } }
-        }, 'consultas');
-
-        charts.odontoChart = buildClickableChart('odontoChart', 'doughnut', {
-            data: { labels: ['Com Consulta', 'Sem Consulta'], datasets: [{ data: [0,0], backgroundColor: ['#8b5cf6', '#cbd5e1'], borderWidth: 2 }] },
-            options: { cutout: '65%' }
-        }, 'odonto');
-
-        let stackedOptions = { scales: { x: { stacked: true }, y: { stacked: true } } };
-
-        charts.exames1TrimChart = buildClickableChart('exames1TrimChart', 'bar', {
-            data: { labels: ['HIV', 'Sífilis', 'Hepatite B', 'Hepatite C'], datasets: [ { label: 'Realizado', data: [0,0,0,0], backgroundColor: '#10b981' }, { label: 'Pendente', data: [0,0,0,0], backgroundColor: '#ef4444' } ] },
-            options: stackedOptions
-        }, 'exame1');
-
-        const pieOpts = { plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 11 } } } } };
-        
-        charts.hiv3Chart = buildClickableChart('hiv3Chart', 'pie', {
-            data: { labels: ['Realizado', 'Pendente', 'N/A'], datasets: [{ data: [0,0,0], backgroundColor: ['#10b981', '#ef4444', '#fbbf24'] }] },
-            options: pieOpts
-        }, 'hiv3_pizza');
-
-        charts.sif3Chart = buildClickableChart('sif3Chart', 'pie', {
-            data: { labels: ['Realizado', 'Pendente', 'N/A'], datasets: [{ data: [0,0,0], backgroundColor: ['#10b981', '#ef4444', '#fbbf24'] }] },
-            options: pieOpts
-        }, 'sif3_pizza');
-
-        charts.paChart = buildClickableChart('paChart', 'pie', {
-            data: { labels: ['7 ou + (Ideal)', 'Menos de 7'], datasets: [{ data: [0,0], backgroundColor: ['#10b981', '#ef4444'] }] },
-            options: pieOpts
-        }, 'pa_pizza');
-
-        charts.antropoChart = buildClickableChart('antropoChart', 'pie', {
-            data: { labels: ['7 ou + (Ideal)', 'Menos de 7'], datasets: [{ data: [0,0], backgroundColor: ['#10b981', '#ef4444'] }] },
-            options: pieOpts
-        }, 'antropo_pizza');
-
-        // DTpa ajustado para 2 categorias: Realizada e Pendente (agrupando NAO_SE_APLICA)
-        charts.dtpaChart = buildClickableChart('dtpaChart', 'pie', {
-            data: { labels: ['Realizada', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#8b5cf6', '#cbd5e1'] }] },
-            options: pieOpts
-        }, 'dtpa_pizza');
-
-        charts.puerperioChart = buildClickableChart('puerperioChart', 'pie', {
-            data: { labels: ['Realizada', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#8b5cf6', '#cbd5e1'] }] },
-            options: pieOpts
-        }, 'puerperio_pizza');
-    }
-
-    initCharts();
-
-    // === GERENCIAMENTO DE LOCALSTORAGE ===
     window.addEventListener('DOMContentLoaded', () => {
         const savedData = localStorage.getItem('gestash_csv_data');
         if (savedData) {
             try {
                 dadosBrutosCSV = normalizeRows(JSON.parse(savedData));
                 if (dadosBrutosCSV.length > 0) {
-                    document.getElementById('btnClearStorage').classList.remove('hidden');
                     gerarBotoesMicroarea();
                     processAndUpdateDashboard();
                 }
@@ -501,9 +560,6 @@
         const file = e.target.files[0];
         if (!file) return;
         Papa.parse(file, { header: true, skipEmptyLines: true, encoding: "ISO-8859-1", transformHeader: function(h) {
-            // Corrige cabeçalhos exportados com parêntese sobrando/desbalanceado
-            // (ex.: "Exame de Sífilis no primeiro trimestre)"), sem afetar
-            // cabeçalhos legítimos com parênteses balanceados (ex.: "IG (DUM) (semanas)").
             let header = h.trim();
             let opens = (header.match(/\(/g) || []).length;
             let closes = (header.match(/\)/g) || []).length;
@@ -518,7 +574,6 @@
             
             try {
                 localStorage.setItem('gestash_csv_data', JSON.stringify(dadosBrutosCSV));
-                document.getElementById('btnClearStorage').classList.remove('hidden');
             } catch (err) {
                 console.warn("Arquivo muito grande para o LocalStorage do navegador.", err);
             }
@@ -529,15 +584,6 @@
         }});
     });
 
-    function limparDadosLocais() {
-        if (confirm("Deseja apagar a planilha salva na memória do navegador?")) {
-            localStorage.removeItem('gestash_csv_data');
-            dadosBrutosCSV = [];
-            document.getElementById('btnClearStorage').classList.add('hidden');
-            window.location.reload();
-        }
-    }
-
     function buscarPaciente(texto) {
         const q = texto.trim().toLowerCase();
         const box = document.getElementById('resultadoBusca');
@@ -546,17 +592,17 @@
         box.classList.remove('hidden');
         if (resultadosBusca.length > 0) {
             box.innerHTML = `
-                <div class="text-xs text-gray-500 mb-2">${resultadosBusca.length} resultado(s) encontrados</div>
+                <div class="text-xs text-gray-500 dark:text-zinc-400 mb-2 font-bold">${resultadosBusca.length} resultado(s) encontrados</div>
                 <div class="flex flex-wrap gap-2">
                     ${resultadosBusca.map((r, i) => `
-                        <button onclick="abrirModalBuscaExata(${i})" class="px-3 py-2 bg-white border border-pink-200 rounded-lg text-sm font-semibold text-pink-700 hover:bg-pink-50 transition shadow-sm">
-                            <i class="fas fa-user mr-1 text-pink-400"></i> ${r['Nome'] || 'Sem nome'}
+                        <button onclick="abrirModalBuscaExata(${i})" class="px-3 py-2 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-700 transition shadow-sm">
+                            <i class="fas fa-user mr-1 text-gray-400"></i> ${r['Nome'] || 'Sem nome'}
                         </button>
                     `).join('')}
                 </div>
             `;
         } else {
-            box.innerHTML = '<div class="text-sm text-gray-500">Nenhuma gestante encontrada.</div>';
+            box.innerHTML = '<div class="text-sm text-gray-500 dark:text-zinc-400 font-medium">Nenhuma gestante encontrada.</div>';
         }
     }
 
@@ -576,6 +622,9 @@
         abrirLayoutModalBase();
     }
 
+    const activeClasses = ['bg-gray-800', 'dark:bg-pink-700', 'text-white', 'border-transparent'];
+    const inactiveClasses = ['bg-white', 'dark:bg-zinc-800', 'text-gray-700', 'dark:text-zinc-300', 'border-gray-300', 'dark:border-zinc-700', 'hover:bg-gray-100', 'dark:hover:bg-zinc-700'];
+
     function gerarBotoesMicroarea() {
         const set = new Set();
         dadosBrutosCSV.forEach(r => {
@@ -586,7 +635,7 @@
         container.innerHTML = '';
         const btnTodas = document.createElement('button');
         btnTodas.id = 'btn-ma-TODAS';
-        btnTodas.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-pink-700 text-white shadow-sm';
+        btnTodas.className = `ma-btn px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm border ${activeClasses.join(' ')}`;
         btnTodas.innerHTML = '<i class="fas fa-globe mr-1"></i> Todas (Geral)';
         btnTodas.onclick = () => filtrarPorMicroarea('TODAS');
         container.appendChild(btnTodas);
@@ -595,8 +644,8 @@
             const id = 'btn-ma-' + ma.replace(/\W/g, '_');
             const btn = document.createElement('button');
             btn.id = id;
-            btn.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-white text-pink-800 border border-pink-200 hover:bg-pink-50 shadow-sm';
-            btn.innerHTML = `<i class="fas fa-map-marker-alt text-pink-400 mr-1"></i> Microárea ${ma}`;
+            btn.className = `ma-btn px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm border ${inactiveClasses.join(' ')}`;
+            btn.innerHTML = `<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> Microárea ${ma}`;
             btn.onclick = () => filtrarPorMicroarea(ma);
             container.appendChild(btn);
         });
@@ -605,14 +654,14 @@
     function filtrarPorMicroarea(ma) {
         microareaSelecionada = ma;
         document.querySelectorAll('.ma-btn').forEach(b => {
-            b.classList.remove('bg-pink-700', 'text-white');
-            b.classList.add('bg-white', 'text-pink-800', 'border-pink-200');
+            b.classList.remove(...activeClasses);
+            b.classList.add(...inactiveClasses);
         });
         const id = 'btn-ma-' + ma.replace(/\W/g, '_');
         const activeBtn = document.getElementById(id);
         if (activeBtn) {
-            activeBtn.classList.remove('bg-white', 'text-pink-800', 'border-pink-200');
-            activeBtn.classList.add('bg-pink-700', 'text-white');
+            activeBtn.classList.remove(...inactiveClasses);
+            activeBtn.classList.add(...activeClasses);
         }
         document.getElementById('resultadoBusca').classList.add('hidden');
         document.getElementById('buscaPaciente').value = '';
@@ -684,7 +733,6 @@
             let qtdAntropo = getNum(row['Quantidade de medições simultâneas de peso e altura']);
             if (qtdAntropo >= 7) antropo[0]++; else antropo[1]++;
             
-            // DTpa nova regra: se for realizado (qualquer texto/valor), dtpa[0]++; senão (incluindo NAO_SE_APLICA, -, vazio), dtpa[1]++;
             let statusDtpa = checkStatusDtpa(row['dTpa']);
             if (statusDtpa === 'REALIZADO') dtpa[0]++;
             else dtpa[1]++;
@@ -695,27 +743,34 @@
             addExameTriplo(row['Exame de Sífilis no terceiro trimestre'] || row['Exame de Sifilis no terceiro trimestre'], sif3);
         });
 
-        document.getElementById('kpi-total').innerText = total.toLocaleString('pt-BR');
-        document.getElementById('kpi-captacao').innerText = countCaptacao.toLocaleString('pt-BR');
-        document.getElementById('kpi-consultas').innerText = countConsultasOk.toLocaleString('pt-BR');
-        document.getElementById('kpi-risco').innerText = countAltoRisco.toLocaleString('pt-BR');
+        document.getElementById('kpi-total').innerText = total.toLocaleString('pt-PT');
+        document.getElementById('kpi-captacao').innerText = countCaptacao.toLocaleString('pt-PT');
+        document.getElementById('kpi-consultas').innerText = countConsultasOk.toLocaleString('pt-PT');
+        document.getElementById('kpi-risco').innerText = countAltoRisco.toLocaleString('pt-PT');
 
-        charts.igChart.data.datasets[0].data = igCounts; charts.igChart.update();
-        charts.riscoChart.data.datasets[0].data = [riscoCounts['Habitual'], riscoCounts['Alto']]; charts.riscoChart.update();
-        charts.consultasPNChart.data.datasets[0].data = consPNCounts; charts.consultasPNChart.update();
-        charts.odontoChart.data.datasets[0].data = odontoCounts; charts.odontoChart.update();
-        
-        charts.exames1TrimChart.data.datasets[0].data = [hiv1[0], sif1[0], hepB1[0], hepC1[0]];
-        charts.exames1TrimChart.data.datasets[1].data = [hiv1[1], sif1[1], hepB1[1], hepC1[1]];
-        charts.exames1TrimChart.update();
+        document.getElementById('kpi-ig-1').innerText = igCounts[0];
+        document.getElementById('kpi-ig-2').innerText = igCounts[1];
+        document.getElementById('kpi-ig-3').innerText = igCounts[2];
+        document.getElementById('kpi-ig-sr').innerText = igCounts[3];
+        document.getElementById('kpi-risco-hab').innerText = riscoCounts['Habitual'];
 
-        charts.hiv3Chart.data.datasets[0].data = hiv3; charts.hiv3Chart.update();
-        charts.sif3Chart.data.datasets[0].data = sif3; charts.sif3Chart.update();
+        document.getElementById('kpi-pn-menor7').innerText = consPNCounts[0];
+        document.getElementById('kpi-pn-maior7').innerText = consPNCounts[1];
+        document.getElementById('kpi-odonto-com').innerText = odontoCounts[0];
+        document.getElementById('kpi-odonto-sem').innerText = odontoCounts[1];
 
-        charts.paChart.data.datasets[0].data = pa; charts.paChart.update();
-        charts.antropoChart.data.datasets[0].data = antropo; charts.antropoChart.update();
-        charts.dtpaChart.data.datasets[0].data = dtpa; charts.dtpaChart.update();
-        charts.puerperioChart.data.datasets[0].data = puerperio; charts.puerperioChart.update();
+        document.getElementById('kpi-hiv1-r').innerText = hiv1[0]; document.getElementById('kpi-hiv1-p').innerText = hiv1[1];
+        document.getElementById('kpi-sif1-r').innerText = sif1[0]; document.getElementById('kpi-sif1-p').innerText = sif1[1];
+        document.getElementById('kpi-hepb-r').innerText = hepB1[0]; document.getElementById('kpi-hepb-p').innerText = hepB1[1];
+        document.getElementById('kpi-hepc-r').innerText = hepC1[0]; document.getElementById('kpi-hepc-p').innerText = hepC1[1];
+
+        document.getElementById('kpi-hiv3-r').innerText = hiv3[0]; document.getElementById('kpi-hiv3-p').innerText = hiv3[1]; document.getElementById('kpi-hiv3-na').innerText = hiv3[2];
+        document.getElementById('kpi-sif3-r').innerText = sif3[0]; document.getElementById('kpi-sif3-p').innerText = sif3[1]; document.getElementById('kpi-sif3-na').innerText = sif3[2];
+
+        document.getElementById('kpi-pa-ideal').innerText = pa[0]; document.getElementById('kpi-pa-alerta').innerText = pa[1];
+        document.getElementById('kpi-antropo-ideal').innerText = antropo[0]; document.getElementById('kpi-antropo-alerta').innerText = antropo[1];
+        document.getElementById('kpi-dtpa-r').innerText = dtpa[0]; document.getElementById('kpi-dtpa-p').innerText = dtpa[1];
+        document.getElementById('kpi-puerp-r').innerText = puerperio[0]; document.getElementById('kpi-puerp-p').innerText = puerperio[1];
     }
 
     function abrirModalFiltro(valorClicado, tipoFiltro) {
@@ -739,8 +794,8 @@
         else titulo = `Filtro: ${valorClicado}`;
 
         document.getElementById('modalTitle').innerText = titulo;
-        document.getElementById('modalSubtitle').innerText = "Processando dados...";
-        document.getElementById('modalTableBody').innerHTML = '<tr><td colspan="7" class="text-center p-8 text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i> Carregando lista...</td></tr>';
+        document.getElementById('modalSubtitle').innerText = "A processar dados...";
+        document.getElementById('modalTableBody').innerHTML = '<tr><td colspan="7" class="text-center p-8 text-gray-500 dark:text-zinc-500 font-medium"><i class="fas fa-spinner fa-spin mr-2"></i> A carregar lista...</td></tr>';
         
         const modal = document.getElementById('pacientesModal');
         document.getElementById('modalEmptyState').classList.add('hidden');
@@ -866,22 +921,22 @@
             let statusVacina = checkStatusDtpa(p['dTpa']);
             
             let badgeRisco = riscoRaw.toLowerCase().includes('alto') 
-                ? `<span class="px-2 py-1 bg-red-100 text-red-700 font-bold rounded-full text-xs">Alto Risco</span>` 
-                : `<span class="px-2 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-full text-xs">Habitual</span>`;
+                ? `<span class="px-2 py-1 bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-400 font-bold rounded-full text-xs border border-red-200 dark:border-red-900/50">Alto Risco</span>` 
+                : `<span class="px-2 py-1 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400 font-bold rounded-full text-xs border border-emerald-200 dark:border-emerald-900/50">Habitual</span>`;
 
-            let corPN = consPN < 7 ? 'text-red-600 font-bold' : 'text-emerald-600';
+            let corPN = consPN < 7 ? 'text-red-600 dark:text-red-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold';
             
-            let txtVacina = 'Pendente', corVacina = 'text-red-500 font-bold';
-            if(statusVacina === 'REALIZADO') { txtVacina = 'Realizada'; corVacina = 'text-emerald-600'; }
+            let txtVacina = 'Pendente', corVacina = 'text-red-600 dark:text-red-400 font-bold';
+            if(statusVacina === 'REALIZADO') { txtVacina = 'Realizada'; corVacina = 'text-emerald-600 dark:text-emerald-400 font-bold'; }
             
             htmlAcumulado += `
-                <tr class="border-b border-gray-100 hover:bg-pink-50 transition">
-                    <td class="p-4 font-medium text-gray-900">${p['Nome'] || 'Sem Nome'}</td>
-                    <td class="p-4 text-center">${ig} sem.</td>
+                <tr class="border-b border-gray-100 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition">
+                    <td class="p-4 font-bold text-gray-900 dark:text-gray-100">${p['Nome'] || 'Sem Nome'}</td>
+                    <td class="p-4 text-center text-gray-700 dark:text-zinc-300">${ig} sem.</td>
                     <td class="p-4 text-center">${badgeRisco}</td>
                     <td class="p-4 text-center ${corPN}">${consPN}</td>
-                    <td class="p-4 text-center">${consOdonto}</td>
-                    <td class="p-4 text-center">${captacao}</td>
+                    <td class="p-4 text-center text-gray-700 dark:text-zinc-300">${consOdonto}</td>
+                    <td class="p-4 text-center text-gray-700 dark:text-zinc-300">${captacao}</td>
                     <td class="p-4 text-center ${corVacina}">${txtVacina}</td>
                 </tr>
             `;
@@ -949,7 +1004,7 @@
 
             htmlTabelaExaustiva += `
                 <tr>
-                    <td style="text-align:left;">${p['Nome'] || 'Sem Nome'}</td>
+                    <td style="text-align:left;"><strong>${p['Nome'] || 'Sem Nome'}</strong></td>
                     <td>${ig}</td>
                     <td>${captacao}</td>
                     <td><strong>${consPN}</strong></td>
@@ -976,16 +1031,16 @@
             <head>
                 <title>Relatório - ${titulo}</title>
                 <style>
-                    body { font-family: 'Arial', sans-serif; padding: 20px; color: #333; }
-                    h1 { margin-bottom: 5px; color: #831843; font-size: 22px; }
-                    p { margin-top: 0; color: #666; font-size: 13px; margin-bottom: 20px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10px; }
-                    th, td { border: 1px solid #ddd; padding: 4px; text-align: center; }
-                    th { background-color: #fce7f3; color: #831843; font-weight: bold; font-size: 11px;}
-                    tr:nth-child(even) { background-color: #fdf2f8; }
-                    .status-sim { color: #166534; font-weight: bold; }
-                    .status-nao { color: #991b1b; font-weight: bold; }
-                    .status-na { color: #6b7280; font-style: italic; }
+                    body { font-family: 'Arial', sans-serif; padding: 20px; color: #1f2937; }
+                    h1 { margin-bottom: 5px; color: #111827; font-size: 22px; }
+                    p { margin-top: 0; color: #4b5563; font-size: 13px; margin-bottom: 20px; font-weight: bold;}
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+                    th, td { border: 1px solid #d1d5db; padding: 5px; text-align: center; color: #374151;}
+                    th { background-color: #f3f4f6; color: #111827; font-weight: bold; font-size: 12px;}
+                    tr:nth-child(even) { background-color: #f9fafb; }
+                    .status-sim { color: #047857; font-weight: bold; }
+                    .status-nao { color: #b91c1c; font-weight: bold; }
+                    .status-na { color: #6b7280; font-style: italic; font-weight: bold;}
                     @media print { body { padding: 0; } @page { size: landscape; margin: 10mm; } }
                 </style>
             </head>
