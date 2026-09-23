@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Painel Saúde - Hipertensos</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,6 +14,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        /* Respeita a área segura (notch/barra de status) caso o painel seja
+           salvo na tela inicial do celular como atalho/PWA. */
+        body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
         .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; transition: transform 0.2s; }
         .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
         .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
@@ -27,10 +30,19 @@
 <body class="text-gray-800 relative">
 
 <div class="flex h-screen overflow-hidden">
-    <!-- Sidebar -->
-    <aside class="w-64 bg-red-900 text-white flex-col transition-all duration-300 hidden md:flex shadow-xl overflow-y-auto z-20">
-        <div class="p-6 text-2xl font-bold border-b border-red-800 text-center flex items-center justify-center">
-            <i class="fas fa-heartbeat mr-3 text-red-300"></i> PSF 1
+    <!-- Overlay (só aparece no mobile quando o menu está aberto) -->
+    <div id="sidebarOverlay" onclick="fecharMenuMobile()" class="hidden fixed inset-0 bg-black/50 z-30 md:hidden"></div>
+
+    <!-- Sidebar: drawer fixo no mobile (escondido fora da tela por padrão),
+         volta a ser estático e sempre visível a partir do breakpoint md -->
+    <aside id="sidebar" class="w-64 bg-red-900 text-white flex flex-col shadow-xl overflow-y-auto z-40
+        fixed inset-y-0 left-0 -translate-x-full transition-transform duration-300
+        md:static md:translate-x-0">
+        <div class="p-6 text-2xl font-bold border-b border-red-800 flex items-center justify-between md:justify-center">
+            <span class="flex items-center"><i class="fas fa-heartbeat mr-3 text-red-300"></i> PSF 1</span>
+            <button onclick="fecharMenuMobile()" class="md:hidden text-red-200 hover:text-white p-1" aria-label="Fechar menu">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
         <nav class="flex-1 p-4 space-y-3 mt-4">
              <a href="index.html" class="flex items-center p-3 bg-indigo-800 rounded-lg text-white font-medium">
@@ -69,20 +81,28 @@
     <!-- Main Content -->
     <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Acompanhamento de Hipertensos</h1>
-                <p class="text-gray-500 mt-1 text-sm md:text-base">Monitoramento de Consultas, Pressão Arterial (PA), Antropometria e Visitas.</p>
+            <div class="flex items-start gap-3 w-full md:w-auto">
+                <button onclick="abrirMenuMobile()" class="md:hidden mt-1 text-gray-600 hover:text-red-700 p-2 -ml-2" aria-label="Abrir menu">
+                    <i class="fas fa-bars fa-lg"></i>
+                </button>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Acompanhamento de Hipertensos</h1>
+                    <p class="text-gray-500 mt-1 text-sm md:text-base">Monitoramento de Consultas, Pressão Arterial (PA), Antropometria e Visitas.</p>
+                </div>
             </div>
             
-            <div class="flex items-center gap-2 flex-wrap">
-                <div class="file-upload-wrapper">
-                    <button class="bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700 transition shadow flex items-center cursor-pointer text-sm font-medium">
-                        <i class="fas fa-file-excel mr-2"></i> Carregar Planilha (CSV/XLSX)
+            <div class="flex items-center gap-2 flex-wrap w-full md:w-auto">
+                <div class="file-upload-wrapper w-full md:w-auto">
+                    <button class="w-full md:w-auto bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700 transition shadow flex items-center justify-center cursor-pointer text-sm font-medium">
+                        <i class="fas fa-file-excel mr-2"></i>
+                        <span class="hidden sm:inline">Carregar Planilha (CSV/XLSX)</span>
+                        <span class="sm:hidden">Carregar Planilha</span>
                     </button>
                     <input type="file" id="csvFileInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
                 </div>
             </div>
         </header>
+
 
         <!-- Barra de Busca -->
         <div class="card mb-4 border border-red-100 p-4">
@@ -283,10 +303,28 @@
 </div>
 
 <script>
+    // === MENU MOBILE (sidebar em drawer) ===
+    function abrirMenuMobile() {
+        document.getElementById('sidebar').classList.remove('-translate-x-full');
+        document.getElementById('sidebarOverlay').classList.remove('hidden');
+    }
+    function fecharMenuMobile() {
+        document.getElementById('sidebar').classList.add('-translate-x-full');
+        document.getElementById('sidebarOverlay').classList.add('hidden');
+    }
+
     let dadosBrutos = []; 
     let microareaSelecionada = 'TODAS'; 
     let resultadosBusca = []; 
     let pacientesAtuaisModal = [];
+
+    // Prazos (em dias) usados para considerar cada indicador "Em dia".
+    // Centralizados aqui para não precisar alterar em vários lugares do
+    // arquivo caso a regra do programa mude.
+    const PRAZO_CONSULTA_DIAS = 180;
+    const PRAZO_VISITA_DIAS = 30;
+    const PRAZO_PA_DIAS = 180;
+    const PRAZO_ANTROPO_DIAS = 365;
 
     function getFiltrados() {
         if (microareaSelecionada === 'TODAS') return dadosBrutos;
@@ -294,6 +332,19 @@
             let ma = r['Microárea'] ? String(r['Microárea']).trim() : 'NÃO INFORMADO';
             return ma === microareaSelecionada;
         });
+    }
+
+    // Cria uma data a partir de dd/mm/aaaa e confirma que ela é uma data real
+    // (o construtor Date "corrige" datas impossíveis silenciosamente, ex.:
+    // 31/02/2024 vira 02/03/2024 em vez de dar erro - isso pega esse caso).
+    function parseDataBR(dia, mes, ano) {
+        const d = parseInt(dia, 10), m = parseInt(mes, 10), a = parseInt(ano, 10);
+        if (isNaN(d) || isNaN(m) || isNaN(a)) return null;
+        const dataObj = new Date(a, m - 1, d);
+        if (dataObj.getFullYear() !== a || dataObj.getMonth() !== m - 1 || dataObj.getDate() !== d) {
+            return null; // data inválida (ex.: 31/02, 32/01)
+        }
+        return dataObj;
     }
 
     // Calcular dias a partir de uma data única
@@ -306,7 +357,7 @@
         if (limpo.includes('/')) {
             let partes = limpo.split('/');
             if (partes.length === 3) {
-                dataObj = new Date(partes[2], partes[1] - 1, partes[0]);
+                dataObj = parseDataBR(partes[0], partes[1], partes[2]);
             }
         } else {
             dataObj = new Date(limpo);
@@ -340,13 +391,14 @@
             let dataObj;
             if (m.includes('/')) {
                 let partes = m.split('/');
-                dataObj = new Date(partes[2], partes[1] - 1, partes[0]);
+                dataObj = parseDataBR(partes[0], partes[1], partes[2]);
             } else {
                 dataObj = new Date(m);
+                if (isNaN(dataObj.getTime())) dataObj = null;
             }
-            dataObj.setHours(0,0,0,0);
             
-            if (!isNaN(dataObj.getTime())) {
+            if (dataObj && !isNaN(dataObj.getTime())) {
+                dataObj.setHours(0,0,0,0);
                 datasValidas.push(dataObj);
             }
         });
@@ -362,6 +414,17 @@
         return diffDias >= 0 ? diffDias : 0;
     }
 
+    // Evita que nomes com <, >, & ou aspas quebrem o HTML ao serem inseridos
+    // via innerHTML.
+    function escapeHtml(texto) {
+        return String(texto)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
     function getDiasConsulta(row) { return calcularDiasAtras(row['Data da última consulta']); }
     function getDiasPA(row) { return calcularDiasAtras(row['Data da última medição de pressão arterial']); }
     function getDiasAntropo(row) { return calcularDiasAtras(row['Data da última medição de peso e altura']); }
@@ -374,25 +437,71 @@
 
         if(nomeArquivo.endsWith('.xlsx') || nomeArquivo.endsWith('.xls')){
             reader.onload = ev => {
-                const data = new Uint8Array(ev.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const jsonResult = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
-                processarDados(jsonResult);
+                try {
+                    const data = new Uint8Array(ev.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    // raw:false + dateNF força o SheetJS a devolver as datas já
+                    // formatadas como texto "dd/mm/aaaa" em vez de número serial
+                    // do Excel (ex.: 45932), que antes era interpretado como o
+                    // "ano 45932" pelo parser de datas e quebrava os indicadores.
+                    const jsonResult = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {
+                        defval: "",
+                        raw: false,
+                        dateNF: 'dd/mm/yyyy'
+                    });
+                    processarDados(jsonResult);
+                } catch (err) {
+                    console.error(err);
+                    alert('Não foi possível ler o arquivo Excel. Verifique se o arquivo não está corrompido ou protegido por senha.\n\nDetalhe: ' + err.message);
+                } finally {
+                    e.target.value = '';
+                }
             };
+            reader.onerror = () => alert('Erro ao ler o arquivo.');
             reader.readAsArrayBuffer(file);
         } else {
             reader.onload = ev => {
-                Papa.parse(ev.target.result, {
-                    header: true, skipEmptyLines: true, encoding: "ISO-8859-1",
-                    complete: results => processarDados(results.data)
-                });
+                try {
+                    Papa.parse(ev.target.result, {
+                        header: true, skipEmptyLines: true, encoding: "ISO-8859-1",
+                        complete: results => {
+                            if (results.errors && results.errors.length) {
+                                console.warn('Avisos ao ler CSV:', results.errors);
+                            }
+                            processarDados(results.data);
+                        },
+                        error: err => alert('Não foi possível ler o CSV: ' + err.message)
+                    });
+                } catch (err) {
+                    console.error(err);
+                    alert('Não foi possível ler o arquivo CSV.\n\nDetalhe: ' + err.message);
+                } finally {
+                    e.target.value = '';
+                }
             };
+            reader.onerror = () => alert('Erro ao ler o arquivo.');
             reader.readAsText(file, 'ISO-8859-1');
         }
     });
 
+    // Colunas que os indicadores desta página dependem para funcionar.
+    const COLUNAS_ESPERADAS = [
+        'Nome', 'Microárea',
+        'Data da última consulta',
+        'Últimas visitas domiciliares',
+        'Data da última medição de pressão arterial',
+        'Data da última medição de peso e altura'
+    ];
+
     function processarDados(dataArray) {
         if(!dataArray.length) return alert('Planilha vazia!');
+
+        const colunasArquivo = Object.keys(dataArray[0]);
+        const faltando = COLUNAS_ESPERADAS.filter(c => !colunasArquivo.includes(c));
+        if (faltando.length) {
+            alert('Atenção: as seguintes colunas não foram encontradas na planilha e os indicadores relacionados podem ficar incorretos:\n\n- ' + faltando.join('\n- '));
+        }
+
         dadosBrutos = dataArray;
         microareaSelecionada = 'TODAS'; 
         gerarBotoesMicroarea(); 
@@ -447,19 +556,19 @@
         dados.forEach(r => {
             // Consulta
             let diasCons = getDiasConsulta(r);
-            if (diasCons !== null && diasCons <= 180) cons[0]++; else cons[1]++;
+            if (diasCons !== null && diasCons <= PRAZO_CONSULTA_DIAS) cons[0]++; else cons[1]++;
 
             // Visita (Data mais recente <= 30 dias)
             let diasVisita = getDiasVisita(r['Últimas visitas domiciliares']);
-            if (diasVisita !== null && diasVisita <= 30) vis[0]++; else vis[1]++;
+            if (diasVisita !== null && diasVisita <= PRAZO_VISITA_DIAS) vis[0]++; else vis[1]++;
 
             // PA
             let diasPA = getDiasPA(r);
-            if (diasPA !== null && diasPA <= 180) pa[0]++; else pa[1]++;
+            if (diasPA !== null && diasPA <= PRAZO_PA_DIAS) pa[0]++; else pa[1]++;
 
             // Antropometria
             let diasAntropo = getDiasAntropo(r);
-            if (diasAntropo !== null && diasAntropo <= 365) antropo[0]++; else antropo[1]++;
+            if (diasAntropo !== null && diasAntropo <= PRAZO_ANTROPO_DIAS) antropo[0]++; else antropo[1]++;
         });
 
         document.getElementById('kpi-total').innerText = total.toLocaleString('pt-BR');
@@ -498,8 +607,17 @@
         if (resultadosBusca.length > 0) {
             box.innerHTML = `<div class="text-xs text-gray-500 mb-2">${resultadosBusca.length} resultado(s)</div>
                 <div class="flex flex-wrap gap-2">
-                    ${resultadosBusca.map((r, i) => `<button onclick="abrirModalComFiltro([resultadosBusca[${i}]], 'Paciente:${r['Nome']}')" class="px-3 py-2 bg-white border border-red-200 rounded-lg text-sm text-red-700 shadow-sm">${r['Nome'] || 'Sem nome'}</button>`).join('')}
+                    ${resultadosBusca.map((r, i) => `<button data-busca-idx="${i}" class="busca-resultado-btn px-3 py-2 bg-white border border-red-200 rounded-lg text-sm text-red-700 shadow-sm">${escapeHtml(r['Nome'] || 'Sem nome')}</button>`).join('')}
                 </div>`;
+            // Usamos addEventListener + data-attribute em vez de onclick inline
+            // com o nome interpolado: nomes com apóstrofo (ex.: "D'Ávila")
+            // quebravam a string do atributo onclick e o botão parava de funcionar.
+            box.querySelectorAll('.busca-resultado-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const r = resultadosBusca[parseInt(btn.dataset.buscaIdx, 10)];
+                    abrirModalComFiltro([r], `Paciente: ${r['Nome']}`);
+                });
+            });
         } else {
             box.innerHTML = '<div class="text-sm text-gray-500">Nenhum paciente encontrado.</div>';
         }
@@ -513,33 +631,35 @@
         const base = getFiltrados();
         let filtrados = [];
         
+        const querEmDia = valor.includes('Em dia');
+
         if (tipo === 'total') filtrados = base;
         else if (tipo === 'consulta') {
             filtrados = base.filter(r => {
                 let d = getDiasConsulta(r);
-                let emDia = (d !== null && d <= 180);
-                return valor.includes('Em dia') ? emDia : !emDia;
+                let emDia = (d !== null && d <= PRAZO_CONSULTA_DIAS);
+                return querEmDia ? emDia : !emDia;
             });
         }
         else if (tipo === 'visita') {
             filtrados = base.filter(r => {
                 let d = getDiasVisita(r['Últimas visitas domiciliares']);
-                let emDia = (d !== null && d <= 30);
-                return valor.includes('Em dia') ? emDia : !emDia;
+                let emDia = (d !== null && d <= PRAZO_VISITA_DIAS);
+                return querEmDia ? emDia : !emDia;
             });
         }
         else if (tipo === 'pa') {
             filtrados = base.filter(r => {
                 let d = getDiasPA(r);
-                let emDia = (d !== null && d <= 180);
-                return valor.includes('Em dia') ? emDia : !emDia;
+                let emDia = (d !== null && d <= PRAZO_PA_DIAS);
+                return querEmDia ? emDia : !emDia;
             });
         }
         else if (tipo === 'antropo') {
             filtrados = base.filter(r => {
                 let d = getDiasAntropo(r);
-                let emDia = (d !== null && d <= 365);
-                return valor.includes('Em dia') ? emDia : !emDia;
+                let emDia = (d !== null && d <= PRAZO_ANTROPO_DIAS);
+                return querEmDia ? emDia : !emDia;
             });
         }
         abrirModalComFiltro(filtrados, `Filtro: ${valor} (${tipo})`);
@@ -579,11 +699,11 @@
         tbody.innerHTML = pacientesAtuaisModal.map(p => {
             return `
                 <tr class="border-b border-gray-100 hover:bg-red-50 transition">
-                    <td class="p-4 font-medium text-gray-900">${p['Nome'] || '-'} <br><span class="text-xs text-gray-500">${p['Idade']||''}</span></td>
-                    <td class="p-4 text-center">${formatarDias(getDiasConsulta(p), 180)}</td>
-                    <td class="p-4 text-center">${formatarDias(getDiasVisita(p['Últimas visitas domiciliares']), 30)}</td>
-                    <td class="p-4 text-center">${formatarDias(getDiasPA(p), 180)}</td>
-                    <td class="p-4 text-center">${formatarDias(getDiasAntropo(p), 365)}</td>
+                    <td class="p-4 font-medium text-gray-900">${escapeHtml(p['Nome'] || '-')} <br><span class="text-xs text-gray-500">${escapeHtml(p['Idade']||'')}</span></td>
+                    <td class="p-4 text-center">${formatarDias(getDiasConsulta(p), PRAZO_CONSULTA_DIAS)}</td>
+                    <td class="p-4 text-center">${formatarDias(getDiasVisita(p['Últimas visitas domiciliares']), PRAZO_VISITA_DIAS)}</td>
+                    <td class="p-4 text-center">${formatarDias(getDiasPA(p), PRAZO_PA_DIAS)}</td>
+                    <td class="p-4 text-center">${formatarDias(getDiasAntropo(p), PRAZO_ANTROPO_DIAS)}</td>
                 </tr>
             `;
         }).join('');
