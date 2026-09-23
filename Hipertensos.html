@@ -6,8 +6,6 @@
     <title>Painel Saúde - Hipertensos</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Papa Parse para ler CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <!-- SheetJS (XLSX) para ler arquivos do Excel -->
@@ -77,9 +75,6 @@
             </div>
             
             <div class="flex items-center gap-2 flex-wrap">
-                <button onclick="limparDadosLocais()" class="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
-                    <i class="fas fa-eraser mr-2"></i> Limpar Dados
-                </button>
                 <div class="file-upload-wrapper">
                     <button class="bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700 transition shadow flex items-center cursor-pointer text-sm font-medium">
                         <i class="fas fa-file-excel mr-2"></i> Carregar Planilha (CSV/XLSX)
@@ -113,87 +108,119 @@
             </div>
         </div>
 
-        <!-- KPI Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6 mb-8">
-            <div class="card border-l-4 border-red-500 flex items-center justify-between cursor-pointer hover:bg-red-50" onclick="abrirModalFiltro('TODOS', 'total')">
+        <!-- INDICADOR GERAL: TOTAL -->
+        <div class="mb-8">
+            <div class="card border-l-4 border-red-500 flex items-center justify-between cursor-pointer hover:bg-red-50 w-full md:w-1/2 xl:w-1/4" onclick="abrirModalFiltro('TODOS', 'total')">
                 <div>
                     <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Total Hipertensos</p>
-                    <h2 id="kpi-total" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
+                    <h2 id="kpi-total" class="text-3xl font-bold text-gray-800">0</h2>
+                    <p class="text-xs text-red-600 mt-1">Pacientes registrados</p>
                 </div>
-                <div class="p-3 md:p-4 bg-red-100 rounded-full text-red-600">
+                <div class="p-4 bg-red-100 rounded-full text-red-600">
                     <i class="fas fa-users fa-xl"></i>
                 </div>
             </div>
+        </div>
+
+        <p class="text-sm text-gray-500 mb-4 ml-1">Dica: <b>Clique em qualquer painel abaixo</b> para abrir a lista de pacientes correspondentes.</p>
+        
+        <!-- ========================================== -->
+        <!-- PAINÉIS DE DETALHAMENTO (Substituindo Gráficos) -->
+        <!-- ========================================== -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             
-            <div class="card border-l-4 border-emerald-500 flex items-center justify-between cursor-pointer hover:bg-emerald-50" onclick="abrirModalFiltro('Em dia', 'consulta')">
-                <div>
-                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Consultas em Dia</p>
-                    <h2 id="kpi-consultas" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
-                    <p class="text-xs text-emerald-600 mt-1">Nos últimos 6 meses</p>
-                </div>
-                <div class="p-3 md:p-4 bg-emerald-50 rounded-full text-emerald-500">
-                    <i class="fas fa-user-md fa-xl"></i>
+            <!-- Bloco 1: Consultas -->
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-user-md mr-2 text-emerald-600"></i> Consultas Médica / Enf.</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="card border-l-4 border-emerald-500 flex items-center justify-between cursor-pointer hover:bg-emerald-50 p-4" onclick="abrirModalFiltro('Em dia', 'consulta')">
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Em Dia</p>
+                            <h2 id="val-cons-dia" class="text-2xl font-bold text-gray-800">0</h2>
+                            <p class="text-xs text-emerald-600 mt-1">Até 180 dias • <span id="pct-cons-dia" class="font-bold">0%</span></p>
+                        </div>
+                        <div class="p-3 bg-emerald-50 rounded-full text-emerald-500"><i class="fas fa-check"></i></div>
+                    </div>
+                    <div class="card border-l-4 border-amber-500 flex items-center justify-between cursor-pointer hover:bg-amber-50 p-4" onclick="abrirModalFiltro('Pendente', 'consulta')">
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Pendente</p>
+                            <h2 id="val-cons-pend" class="text-2xl font-bold text-gray-800">0</h2>
+                            <p class="text-xs text-amber-600 mt-1">+ de 180 dias • <span id="pct-cons-pend" class="font-bold">0%</span></p>
+                        </div>
+                        <div class="p-3 bg-amber-50 rounded-full text-amber-500"><i class="fas fa-exclamation-triangle"></i></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card border-l-4 border-blue-500 flex items-center justify-between cursor-pointer hover:bg-blue-50" onclick="abrirModalFiltro('Realizado', 'pa')">
-                <div>
-                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">PA Aferida</p>
-                    <h2 id="kpi-pa" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
-                    <p class="text-xs text-blue-600 mt-1">Pressão Arterial em dia</p>
-                </div>
-                <div class="p-3 md:p-4 bg-blue-50 rounded-full text-blue-500">
-                    <i class="fas fa-stethoscope fa-xl"></i>
+            <!-- Bloco 2: Visitas -->
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-home mr-2 text-purple-600"></i> Visitas Domiciliares</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="card border-l-4 border-purple-500 flex items-center justify-between cursor-pointer hover:bg-purple-50 p-4" onclick="abrirModalFiltro('Em dia', 'visita')">
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Em Dia</p>
+                            <h2 id="val-vis-dia" class="text-2xl font-bold text-gray-800">0</h2>
+                            <p class="text-xs text-purple-600 mt-1">Até 30 dias • <span id="pct-vis-dia" class="font-bold">0%</span></p>
+                        </div>
+                        <div class="p-3 bg-purple-50 rounded-full text-purple-500"><i class="fas fa-check"></i></div>
+                    </div>
+                    <div class="card border-l-4 border-pink-500 flex items-center justify-between cursor-pointer hover:bg-pink-50 p-4" onclick="abrirModalFiltro('Pendente', 'visita')">
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Pendente</p>
+                            <h2 id="val-vis-pend" class="text-2xl font-bold text-gray-800">0</h2>
+                            <p class="text-xs text-pink-600 mt-1">+ de 30 dias • <span id="pct-vis-pend" class="font-bold">0%</span></p>
+                        </div>
+                        <div class="p-3 bg-pink-50 rounded-full text-pink-500"><i class="fas fa-exclamation-triangle"></i></div>
+                    </div>
                 </div>
             </div>
 
-            <div class="card border-l-4 border-purple-500 flex items-center justify-between cursor-pointer hover:bg-purple-50" onclick="abrirModalFiltro('Em dia', 'visita')">
-                <div>
-                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Visitas em Dia</p>
-                    <h2 id="kpi-visitas" class="text-2xl md:text-3xl font-bold text-gray-800">0</h2>
-                    <p class="text-xs text-purple-600 mt-1">ACS nos últimos 30 dias</p>
-                </div>
-                <div class="p-3 md:p-4 bg-purple-50 rounded-full text-purple-500">
-                    <i class="fas fa-home fa-xl"></i>
+            <!-- Bloco 3: PA -->
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-stethoscope mr-2 text-blue-600"></i> Pressão Arterial (PA)</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="card border-l-4 border-blue-500 flex items-center justify-between cursor-pointer hover:bg-blue-50 p-4" onclick="abrirModalFiltro('Em dia', 'pa')">
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Em Dia</p>
+                            <h2 id="val-pa-dia" class="text-2xl font-bold text-gray-800">0</h2>
+                            <p class="text-xs text-blue-600 mt-1">Até 180 dias • <span id="pct-pa-dia" class="font-bold">0%</span></p>
+                        </div>
+                        <div class="p-3 bg-blue-50 rounded-full text-blue-500"><i class="fas fa-check"></i></div>
+                    </div>
+                    <div class="card border-l-4 border-gray-400 flex items-center justify-between cursor-pointer hover:bg-gray-50 p-4" onclick="abrirModalFiltro('Pendente', 'pa')">
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Pendente</p>
+                            <h2 id="val-pa-pend" class="text-2xl font-bold text-gray-800">0</h2>
+                            <p class="text-xs text-gray-600 mt-1">+ de 180 dias • <span id="pct-pa-pend" class="font-bold">0%</span></p>
+                        </div>
+                        <div class="p-3 bg-gray-100 rounded-full text-gray-500"><i class="fas fa-exclamation-triangle"></i></div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <p class="text-sm text-gray-500 mb-4 ml-1">Dica: <b>Clique nas fatias ou barras de qualquer gráfico</b> para abrir a lista de pacientes correspondentes.</p>
-        
-        <!-- Bloco 1: Acompanhamento de Rotina -->
-        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-calendar-check mr-2 text-red-600"></i> Acompanhamento Geral (Prazos)</h3>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Consulta (Médica ou Enfermagem)</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="consultasChart"></canvas>
+            <!-- Bloco 4: Antropometria -->
+            <div>
+                <h3 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-weight mr-2 text-teal-600"></i> Antropometria</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="card border-l-4 border-teal-500 flex items-center justify-between cursor-pointer hover:bg-teal-50 p-4" onclick="abrirModalFiltro('Em dia', 'antropo')">
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Em Dia</p>
+                            <h2 id="val-antropo-dia" class="text-2xl font-bold text-gray-800">0</h2>
+                            <p class="text-xs text-teal-600 mt-1">Até 365 dias • <span id="pct-antropo-dia" class="font-bold">0%</span></p>
+                        </div>
+                        <div class="p-3 bg-teal-50 rounded-full text-teal-500"><i class="fas fa-check"></i></div>
+                    </div>
+                    <div class="card border-l-4 border-orange-500 flex items-center justify-between cursor-pointer hover:bg-orange-50 p-4" onclick="abrirModalFiltro('Pendente', 'antropo')">
+                        <div>
+                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Pendente</p>
+                            <h2 id="val-antropo-pend" class="text-2xl font-bold text-gray-800">0</h2>
+                            <p class="text-xs text-orange-600 mt-1">+ de 365 dias • <span id="pct-antropo-pend" class="font-bold">0%</span></p>
+                        </div>
+                        <div class="p-3 bg-orange-50 rounded-full text-orange-500"><i class="fas fa-exclamation-triangle"></i></div>
+                    </div>
                 </div>
             </div>
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Visita Domiciliar (ACS)</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="visitasChart"></canvas>
-                </div>
-            </div>
-        </div>
 
-        <!-- Bloco 2: Aferições Clínicas -->
-        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center mt-10"><i class="fas fa-file-medical-alt mr-2 text-red-600"></i> Sinais Vitais e Antropometria</h3>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Aferição de PA (Pressão Arterial)</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="paChart"></canvas>
-                </div>
-            </div>
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Antropometria (Peso e Altura)</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="antropoChart"></canvas>
-                </div>
-            </div>
         </div>
     </main>
 </div>
@@ -236,8 +263,8 @@
                         <th class="p-4 border-b">Nome / Idade</th>
                         <th class="p-4 border-b text-center">Tempo s/ Consulta</th>
                         <th class="p-4 border-b text-center">Tempo s/ Visita</th>
-                        <th class="p-4 border-b text-center">Aferição PA</th>
-                        <th class="p-4 border-b text-center">Antropometria</th>
+                        <th class="p-4 border-b text-center">Tempo s/ PA</th>
+                        <th class="p-4 border-b text-center">Tempo s/ Antropometria</th>
                     </tr>
                 </thead>
                 <tbody id="modalTableBody" class="text-sm text-gray-700 divide-y divide-gray-100"></tbody>
@@ -260,13 +287,6 @@
     let microareaSelecionada = 'TODAS'; 
     let resultadosBusca = []; 
     let pacientesAtuaisModal = [];
-    let charts = {};
-
-    const defaultOptions = { 
-        responsive: true, maintainAspectRatio: false, 
-        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, 
-        animation: { duration: 600 } 
-    };
 
     function getFiltrados() {
         if (microareaSelecionada === 'TODAS') return dadosBrutos;
@@ -276,80 +296,75 @@
         });
     }
 
-    // Funções de Extração de Dados
-    function normalizarNumero(v) {
-        if (v === null || v === undefined || String(v).trim() === '' || String(v).trim() === '-') return null;
-        const n = parseInt(String(v).replace(',', '.'), 10);
-        return Number.isFinite(n) ? n : null;
-    }
-
-    function getDiasConsulta(row) {
-        const c1 = normalizarNumero(row['Dias desde o último atendimento médico']);
-        const c2 = normalizarNumero(row['Dias desde o último atendimento de enfermagem']);
-        const c3 = normalizarNumero(row['Meses desde o último atendimento médico']) !== null ? normalizarNumero(row['Meses desde o último atendimento médico']) * 30 : null;
-        const c4 = normalizarNumero(row['Meses desde o último atendimento de enfermagem']) !== null ? normalizarNumero(row['Meses desde o último atendimento de enfermagem']) * 30 : null;
+    // Calcular dias a partir de uma data única
+    function calcularDiasAtras(dataStr) {
+        if (!dataStr || String(dataStr).trim() === '' || String(dataStr).trim() === '-') return null;
         
-        let validos = [c1, c2, c3, c4].filter(v => v !== null);
-        if (validos.length === 0) return null; 
-        return Math.min(...validos);
-    }
-
-    function getDiasVisita(row) {
-        const c1 = normalizarNumero(row['Dias desde a última visita domiciliar']);
-        const c2 = normalizarNumero(row['Meses desde a última visita domiciliar']) !== null ? normalizarNumero(row['Meses desde a última visita domiciliar']) * 30 : null;
+        let dataObj;
+        let limpo = String(dataStr).trim();
         
-        let validos = [c1, c2].filter(v => v !== null);
-        if (validos.length === 0) return null; 
-        return Math.min(...validos);
-    }
-
-    function checkRealizado(row, chavesPossiveis) {
-        for (let key of Object.keys(row)) {
-            let keyUpper = key.toUpperCase();
-            if (chavesPossiveis.some(c => keyUpper.includes(c.toUpperCase()))) {
-                let val = String(row[key] || '').trim().toUpperCase();
-                if (val === 'SIM' || val === 'REALIZADO' || val === 'AVALIADO') return true;
-                let num = normalizarNumero(row[key]);
-                if (num !== null && num > 0) return true; 
-                if (val.match(/^\d{2}\/\d{2}\/\d{4}/)) return true;
+        if (limpo.includes('/')) {
+            let partes = limpo.split('/');
+            if (partes.length === 3) {
+                dataObj = new Date(partes[2], partes[1] - 1, partes[0]);
             }
+        } else {
+            dataObj = new Date(limpo);
         }
-        return false;
+        
+        if (!dataObj || isNaN(dataObj.getTime())) return null;
+
+        const hoje = new Date();
+        hoje.setHours(0,0,0,0);
+        dataObj.setHours(0,0,0,0);
+        
+        const diffTempo = hoje - dataObj;
+        const diffDias = Math.ceil(diffTempo / (1000 * 60 * 60 * 24)); 
+        return diffDias >= 0 ? diffDias : 0; 
     }
 
-    function buildChart(id, type, data, filterName, isDoughnut = false) {
-        let opt = { ...defaultOptions };
-        if (isDoughnut) opt.cutout = '65%';
-        opt.onHover = (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; };
-        opt.onClick = (e, el, chart) => {
-            if (el.length > 0) abrirModalFiltro(chart.data.labels[el[0].index], filterName);
-        };
-        return new Chart(document.getElementById(id), { type: type, data: data, options: opt });
+    // Métrica de Visita (Mais recente na coluna)
+    function getDiasVisita(textoDatas) {
+        if (!textoDatas || String(textoDatas).trim() === '' || String(textoDatas).trim() === '-') return null;
+        
+        let regex = /(\d{2}\/\d{2}\/\d{4})|(\d{4}-\d{2}-\d{2})/g;
+        let matches = String(textoDatas).match(regex);
+        
+        if (!matches || matches.length === 0) return null;
+        
+        let datasValidas = [];
+        const hoje = new Date();
+        hoje.setHours(0,0,0,0);
+        
+        matches.forEach(m => {
+            let dataObj;
+            if (m.includes('/')) {
+                let partes = m.split('/');
+                dataObj = new Date(partes[2], partes[1] - 1, partes[0]);
+            } else {
+                dataObj = new Date(m);
+            }
+            dataObj.setHours(0,0,0,0);
+            
+            if (!isNaN(dataObj.getTime())) {
+                datasValidas.push(dataObj);
+            }
+        });
+        
+        if (datasValidas.length === 0) return null;
+        
+        // Ordenar pela data mais recente
+        datasValidas.sort((a, b) => b - a);
+        
+        const diffTempo = hoje - datasValidas[0];
+        const diffDias = Math.ceil(diffTempo / (1000 * 60 * 60 * 24));
+        
+        return diffDias >= 0 ? diffDias : 0;
     }
 
-    function initCharts() {
-        charts.consultasChart = buildChart('consultasChart', 'bar', {
-            labels: ['Em dia (<= 6 meses)', 'Atrasada', 'Sem Registro'],
-            datasets: [{ label: 'Pacientes', data: [0,0,0], backgroundColor: ['#10b981', '#f59e0b', '#9ca3af'], borderRadius: 4 }]
-        }, 'consulta');
-
-        charts.visitasChart = buildChart('visitasChart', 'bar', {
-            labels: ['Em dia (<= 30 dias)', 'Atrasada', 'Sem Registro'],
-            datasets: [{ label: 'Pacientes', data: [0,0,0], backgroundColor: ['#3b82f6', '#f43f5e', '#9ca3af'], borderRadius: 4 }]
-        }, 'visita');
-
-        let pieColors = ['#dc2626', '#e2e8f0']; // Red and Gray
-
-        charts.paChart = buildChart('paChart', 'doughnut', {
-            labels: ['Realizado', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: pieColors, borderWidth: 2 }]
-        }, 'pa', true);
-
-        charts.antropoChart = buildChart('antropoChart', 'doughnut', {
-            labels: ['Realizado', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: pieColors, borderWidth: 2 }]
-        }, 'antropo', true);
-    }
-
-    initCharts();
+    function getDiasConsulta(row) { return calcularDiasAtras(row['Data da última consulta']); }
+    function getDiasPA(row) { return calcularDiasAtras(row['Data da última medição de pressão arterial']); }
+    function getDiasAntropo(row) { return calcularDiasAtras(row['Data da última medição de peso e altura']); }
 
     // === PROCESSAMENTO DE PLANILHAS ===
     document.getElementById('csvFileInput').addEventListener('change', e => {
@@ -382,15 +397,6 @@
         microareaSelecionada = 'TODAS'; 
         gerarBotoesMicroarea(); 
         processAndUpdateDashboard(); 
-    }
-
-    function limparDadosLocais() {
-        if (confirm("Deseja apagar os dados carregados?")) {
-            dadosBrutos = [];
-            document.getElementById('csvFileInput').value = '';
-            processAndUpdateDashboard();
-            document.getElementById('microareaButtonsContainer').innerHTML = '<span class="text-sm text-gray-500 italic">Planilha limpa...</span>';
-        }
     }
 
     function gerarBotoesMicroarea() {
@@ -428,38 +434,58 @@
         processAndUpdateDashboard();
     }
 
-    // === LÓGICA DE INDICADORES ===
+    // === LÓGICA DE INDICADORES (PAINÉIS) ===
     function processAndUpdateDashboard() {
         const dados = getFiltrados(); 
         let total = dados.length;
 
-        let cons = [0,0,0]; // Em dia, Atrasada, Sem Reg
-        let vis = [0,0,0];
-        let pa = [0,0]; // Realizado, Pendente
-        let antropo = [0,0];
+        let cons = [0,0]; // Em dia, Pendente
+        let vis = [0,0]; 
+        let pa = [0,0]; 
+        let antropo = [0,0]; 
 
         dados.forEach(r => {
+            // Consulta
             let diasCons = getDiasConsulta(r);
-            if (diasCons === null) cons[2]++;
-            else if (diasCons <= 180) cons[0]++; else cons[1]++;
+            if (diasCons !== null && diasCons <= 180) cons[0]++; else cons[1]++;
 
-            let diasVis = getDiasVisita(r);
-            if (diasVis === null) vis[2]++;
-            else if (diasVis <= 30) vis[0]++; else vis[1]++;
+            // Visita (Data mais recente <= 30 dias)
+            let diasVisita = getDiasVisita(r['Últimas visitas domiciliares']);
+            if (diasVisita !== null && diasVisita <= 30) vis[0]++; else vis[1]++;
 
-            checkRealizado(r, ['Pressão Arterial', 'PA']) ? pa[0]++ : pa[1]++;
-            checkRealizado(r, ['Antropometria', 'Peso', 'Altura']) ? antropo[0]++ : antropo[1]++;
+            // PA
+            let diasPA = getDiasPA(r);
+            if (diasPA !== null && diasPA <= 180) pa[0]++; else pa[1]++;
+
+            // Antropometria
+            let diasAntropo = getDiasAntropo(r);
+            if (diasAntropo !== null && diasAntropo <= 365) antropo[0]++; else antropo[1]++;
         });
 
         document.getElementById('kpi-total').innerText = total.toLocaleString('pt-BR');
-        document.getElementById('kpi-consultas').innerText = cons[0].toLocaleString('pt-BR');
-        document.getElementById('kpi-pa').innerText = pa[0].toLocaleString('pt-BR');
-        document.getElementById('kpi-visitas').innerText = vis[0].toLocaleString('pt-BR');
 
-        charts.consultasChart.data.datasets[0].data = cons; charts.consultasChart.update();
-        charts.visitasChart.data.datasets[0].data = vis; charts.visitasChart.update();
-        charts.paChart.data.datasets[0].data = pa; charts.paChart.update();
-        charts.antropoChart.data.datasets[0].data = antropo; charts.antropoChart.update();
+        // Função utilitária para atualizar os valores numéricos e percentuais
+        const updateCard = (valId, pctId, count) => {
+            const valEl = document.getElementById(valId);
+            const pctEl = document.getElementById(pctId);
+            if (valEl) valEl.innerText = count.toLocaleString('pt-BR');
+            if (pctEl) {
+                let pct = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+                pctEl.innerText = `${pct}%`;
+            }
+        };
+
+        updateCard('val-cons-dia', 'pct-cons-dia', cons[0]);
+        updateCard('val-cons-pend', 'pct-cons-pend', cons[1]);
+        
+        updateCard('val-vis-dia', 'pct-vis-dia', vis[0]);
+        updateCard('val-vis-pend', 'pct-vis-pend', vis[1]);
+        
+        updateCard('val-pa-dia', 'pct-pa-dia', pa[0]);
+        updateCard('val-pa-pend', 'pct-pa-pend', pa[1]);
+        
+        updateCard('val-antropo-dia', 'pct-antropo-dia', antropo[0]);
+        updateCard('val-antropo-pend', 'pct-antropo-pend', antropo[1]);
     }
 
     // === BUSCA E MODAL ===
@@ -491,27 +517,29 @@
         else if (tipo === 'consulta') {
             filtrados = base.filter(r => {
                 let d = getDiasConsulta(r);
-                if (valor.includes('Em dia')) return d !== null && d <= 180;
-                if (valor.includes('Atrasada')) return d !== null && d > 180;
-                return d === null;
+                let emDia = (d !== null && d <= 180);
+                return valor.includes('Em dia') ? emDia : !emDia;
             });
         }
         else if (tipo === 'visita') {
             filtrados = base.filter(r => {
-                let d = getDiasVisita(r);
-                if (valor.includes('Em dia')) return d !== null && d <= 30;
-                if (valor.includes('Atrasada')) return d !== null && d > 30;
-                return d === null;
+                let d = getDiasVisita(r['Últimas visitas domiciliares']);
+                let emDia = (d !== null && d <= 30);
+                return valor.includes('Em dia') ? emDia : !emDia;
             });
         }
-        else {
-            let chaves = [];
-            if (tipo === 'pa') chaves = ['Pressão Arterial', 'PA'];
-            if (tipo === 'antropo') chaves = ['Antropometria', 'Peso', 'Altura'];
-            
+        else if (tipo === 'pa') {
             filtrados = base.filter(r => {
-                let status = checkRealizado(r, chaves);
-                return valor === 'Realizado' ? status : !status;
+                let d = getDiasPA(r);
+                let emDia = (d !== null && d <= 180);
+                return valor.includes('Em dia') ? emDia : !emDia;
+            });
+        }
+        else if (tipo === 'antropo') {
+            filtrados = base.filter(r => {
+                let d = getDiasAntropo(r);
+                let emDia = (d !== null && d <= 365);
+                return valor.includes('Em dia') ? emDia : !emDia;
             });
         }
         abrirModalComFiltro(filtrados, `Filtro: ${valor} (${tipo})`);
@@ -535,12 +563,6 @@
         return `<span class="text-red-600 font-bold">${dias} dias</span>`;
     }
 
-    function renderStatus(booleano) {
-        return booleano 
-            ? '<span class="px-2 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-full text-xs">Sim</span>'
-            : '<span class="px-2 py-1 bg-red-100 text-red-700 font-bold rounded-full text-xs">Não</span>';
-    }
-
     function ordenarTabelaModal() {
         const metodo = document.getElementById('sortTabela').value;
         if (metodo === 'default') {
@@ -548,23 +570,20 @@
         } else if (metodo === 'consulta_maior') {
             pacientesAtuaisModal.sort((a, b) => (getDiasConsulta(b) ?? 9999) - (getDiasConsulta(a) ?? 9999));
         } else if (metodo === 'visita_maior') {
-            pacientesAtuaisModal.sort((a, b) => (getDiasVisita(b) ?? 9999) - (getDiasVisita(a) ?? 9999));
+            pacientesAtuaisModal.sort((a, b) => (getDiasVisita(b['Últimas visitas domiciliares']) ?? 9999) - (getDiasVisita(a['Últimas visitas domiciliares']) ?? 9999));
         }
         
         const tbody = document.getElementById('modalTableBody');
         document.getElementById('modalSubtitle').innerText = `Total: ${pacientesAtuaisModal.length} paciente(s).`;
         
         tbody.innerHTML = pacientesAtuaisModal.map(p => {
-            let pa = checkRealizado(p, ['Pressão Arterial', 'PA']);
-            let ant = checkRealizado(p, ['Antropometria', 'Peso', 'Altura']);
-            
             return `
                 <tr class="border-b border-gray-100 hover:bg-red-50 transition">
                     <td class="p-4 font-medium text-gray-900">${p['Nome'] || '-'} <br><span class="text-xs text-gray-500">${p['Idade']||''}</span></td>
                     <td class="p-4 text-center">${formatarDias(getDiasConsulta(p), 180)}</td>
-                    <td class="p-4 text-center">${formatarDias(getDiasVisita(p), 30)}</td>
-                    <td class="p-4 text-center">${renderStatus(pa)}</td>
-                    <td class="p-4 text-center">${renderStatus(ant)}</td>
+                    <td class="p-4 text-center">${formatarDias(getDiasVisita(p['Últimas visitas domiciliares']), 30)}</td>
+                    <td class="p-4 text-center">${formatarDias(getDiasPA(p), 180)}</td>
+                    <td class="p-4 text-center">${formatarDias(getDiasAntropo(p), 365)}</td>
                 </tr>
             `;
         }).join('');
