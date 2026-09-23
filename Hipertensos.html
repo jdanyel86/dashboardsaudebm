@@ -6,74 +6,105 @@
     <title>Painel Saúde - Hipertensos</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <!-- Papa Parse para ler CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <!-- SheetJS (XLSX) para ler arquivos do Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    
+    <!-- Script Anti-FOUC para Tema Escuro -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        /* Respeita a área segura (notch/barra de status) caso o painel seja
-           salvo na tela inicial do celular como atalho/PWA. */
+        body { font-family: 'Inter', sans-serif; }
         body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        
+        .card { border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 20px; transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, border-color 0.3s; }
+        
+        /* Tema Claro: Cartões */
+        .card { background: white; border: 1px solid #e2e8f0; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.05); border-color: #cbd5e1; }
+        
+        /* Tema Escuro: Cartões (Preto Neutro) */
+        .dark .card { background: #121212; border-color: #27272a; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5); }
+        .dark .card:hover { border-color: #3f3f46; box-shadow: 0 10px 15px rgba(0,0,0,0.6); }
+
         .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
         .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+        
+        /* Scrollbar Claro */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Scrollbar Escuro */
+        .dark ::-webkit-scrollbar-track { background: #000000; }
+        .dark ::-webkit-scrollbar-thumb { background: #27272a; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
     </style>
 </head>
-<body class="text-gray-800 relative">
+<body class="text-gray-800 dark:text-gray-200 bg-slate-50 dark:bg-black transition-colors duration-300 relative">
 
 <div class="flex h-screen overflow-hidden">
-    <!-- Overlay (só aparece no mobile quando o menu está aberto) -->
+    <!-- Overlay Mobile -->
     <div id="sidebarOverlay" onclick="fecharMenuMobile()" class="hidden fixed inset-0 bg-black/50 z-30 md:hidden"></div>
 
-    <!-- Sidebar: drawer fixo no mobile (escondido fora da tela por padrão),
-         volta a ser estático e sempre visível a partir do breakpoint md -->
-    <aside id="sidebar" class="w-64 bg-red-900 text-white flex flex-col shadow-xl overflow-y-auto z-40
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-white dark:bg-black text-gray-700 dark:text-gray-300 flex flex-col shadow-sm overflow-y-auto z-40
         fixed inset-y-0 left-0 -translate-x-full transition-transform duration-300
-        md:static md:translate-x-0">
-        <div class="p-6 text-2xl font-bold border-b border-red-800 flex items-center justify-between md:justify-center">
-            <span class="flex items-center"><i class="fas fa-heartbeat mr-3 text-red-300"></i> PSF 1</span>
-            <button onclick="fecharMenuMobile()" class="md:hidden text-red-200 hover:text-white p-1" aria-label="Fechar menu">
+        md:static md:translate-x-0 border-r border-gray-200 dark:border-zinc-900">
+        <div class="p-6 text-2xl font-bold border-b border-gray-100 dark:border-zinc-900 flex items-center justify-between md:justify-center text-gray-800 dark:text-gray-100">
+            <span class="flex items-center">
+                <img src="logo 01.png" alt="Logo PSF 1" class="h-8 mr-3"> PSF 1
+            </span>
+            <button onclick="fecharMenuMobile()" class="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white p-1" aria-label="Fechar menu">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <nav class="flex-1 p-4 space-y-3 mt-4">
-             <a href="index.html" class="flex items-center p-3 bg-indigo-800 rounded-lg text-white font-medium">
+        <nav class="flex-1 p-4 space-y-2 mt-4">
+             <a href="index.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Home
             </a>
-            <a href="Gestantes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Gestantes.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Gestantes
             </a>
-            <a href="Infantil.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Infantil.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                Crianças
             </a>
-            <a href="Diabeticos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Diabeticos.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Diabéticos
             </a>
-            <a href="Hipertensos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <!-- Botão Ativo Hipertensos (Tom Azulado) -->
+            <a href="Hipertensos.html" class="flex items-center p-3 bg-blue-50 dark:bg-blue-950/40 rounded-lg text-blue-700 dark:text-blue-400 font-bold border border-blue-100 dark:border-blue-900/50 shadow-sm transition">
                 Hipertensos
             </a>
-            <a href="Mulher.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Mulher.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Mulher
             </a>
-            <a href="Idosos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Idosos.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Idosos
             </a>
-            <a href="agentes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="agentes.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 ACS
             </a>
-            <a href="odonto.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="odonto.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Odonto
             </a>
         </nav>
-        <div class="p-4 text-xs text-red-300 text-center border-t border-red-800">
+        <div class="p-4 text-xs text-gray-400 dark:text-zinc-500 font-medium text-center border-t border-gray-100 dark:border-zinc-900">
             José Danyel Siqueira do Nascimento
         </div>
     </aside>
@@ -82,18 +113,23 @@
     <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
             <div class="flex items-start gap-3 w-full md:w-auto">
-                <button onclick="abrirMenuMobile()" class="md:hidden mt-1 text-gray-600 hover:text-red-700 p-2 -ml-2" aria-label="Abrir menu">
+                <button onclick="abrirMenuMobile()" class="md:hidden mt-1 text-gray-600 dark:text-gray-300 hover:text-blue-600 p-2 -ml-2" aria-label="Abrir menu">
                     <i class="fas fa-bars fa-lg"></i>
                 </button>
                 <div>
-                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Acompanhamento de Hipertensos</h1>
-                    <p class="text-gray-500 mt-1 text-sm md:text-base">Monitoramento de Consultas, Pressão Arterial (PA), Antropometria e Visitas.</p>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Acompanhamento de Hipertensos</h1>
+                    <p class="text-gray-500 dark:text-zinc-400 mt-1 text-sm md:text-base">Monitoramento de Consultas, Pressão Arterial (PA), Antropometria e Visitas.</p>
                 </div>
             </div>
             
             <div class="flex items-center gap-2 flex-wrap w-full md:w-auto">
+                <!-- Botão Toggle Tema Escuro -->
+                <button id="themeToggle" class="bg-white dark:bg-zinc-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-zinc-800 px-4 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition shadow-sm flex items-center justify-center font-bold">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
+
                 <div class="file-upload-wrapper w-full md:w-auto">
-                    <button class="w-full md:w-auto bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700 transition shadow flex items-center justify-center cursor-pointer text-sm font-medium">
+                    <button class="w-full md:w-auto bg-blue-600 dark:bg-blue-700 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition shadow flex items-center justify-center cursor-pointer text-sm font-medium">
                         <i class="fas fa-file-excel mr-2"></i>
                         <span class="hidden sm:inline">Carregar Planilha (CSV/XLSX)</span>
                         <span class="sm:hidden">Carregar Planilha</span>
@@ -103,140 +139,139 @@
             </div>
         </header>
 
-
         <!-- Barra de Busca -->
-        <div class="card mb-4 border border-red-100 p-4">
+        <div class="card mb-4 border border-gray-200 dark:border-zinc-800 p-4 bg-white dark:bg-zinc-900 shadow-sm">
             <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
                 <div class="relative flex-1">
-                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400 dark:text-zinc-500"></i>
                     <input id="buscaPaciente" type="search" placeholder="Buscar paciente por nome..."
-                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-red-200 focus:border-red-500 text-sm"
+                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-gray-50 dark:bg-black text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-zinc-500 font-medium transition"
                            oninput="buscarPaciente(this.value)">
                 </div>
-                <button onclick="abrirResultadosBusca()" class="bg-red-50 text-red-800 border border-red-200 px-4 py-2.5 rounded-lg hover:bg-red-100 text-sm font-semibold transition">
-                    <i class="fas fa-list mr-1"></i> Ver Resultados
+                <button onclick="abrirResultadosBusca()" class="bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-zinc-700 px-4 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 text-sm font-bold transition shadow-sm">
+                    <i class="fas fa-list mr-1 text-gray-400 dark:text-zinc-400"></i> Ver Resultados
                 </button>
             </div>
-            <div id="resultadoBusca" class="hidden mt-3 p-3 bg-gray-50 rounded border border-gray-200"></div>
+            <div id="resultadoBusca" class="hidden mt-3 p-3 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-zinc-800"></div>
         </div>
 
         <!-- Filtros de Microárea -->
-        <div class="bg-white p-4 rounded-xl shadow-sm mb-8 border border-red-100">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3"><i class="fas fa-filter mr-1"></i> Filtrar por Microárea:</p>
+        <div class="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm mb-8 border border-gray-200 dark:border-zinc-800 transition-colors duration-300">
+            <p class="text-xs font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-3"><i class="fas fa-filter mr-1 text-gray-400"></i> Filtrar por Microárea:</p>
             <div id="microareaButtonsContainer" class="flex flex-wrap gap-2">
-                <span class="text-sm text-gray-500 italic">Faça o upload da planilha para carregar as microáreas...</span>
+                <span class="text-sm text-gray-400 dark:text-zinc-500 font-medium italic">Faça o upload da planilha para carregar as microáreas...</span>
             </div>
         </div>
 
         <!-- INDICADOR GERAL: TOTAL -->
         <div class="mb-8">
-            <div class="card border-l-4 border-red-500 flex items-center justify-between cursor-pointer hover:bg-red-50 w-full md:w-1/2 xl:w-1/4" onclick="abrirModalFiltro('TODOS', 'total')">
+            <div class="card border-l-4 border-blue-500 dark:border-blue-600 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 w-full md:w-1/2 xl:w-1/4" onclick="abrirModalFiltro('TODOS', 'total')">
                 <div>
-                    <p class="text-xs md:text-sm text-gray-500 font-semibold mb-1 uppercase">Total Hipertensos</p>
-                    <h2 id="kpi-total" class="text-3xl font-bold text-gray-800">0</h2>
-                    <p class="text-xs text-red-600 mt-1">Pacientes registrados</p>
+                    <p class="text-xs md:text-sm text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Total Hipertensos</p>
+                    <h2 id="kpi-total" class="text-3xl font-bold text-gray-900 dark:text-white">0</h2>
+                    <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">Pacientes registrados</p>
                 </div>
-                <div class="p-4 bg-red-100 rounded-full text-red-600">
+                <div class="p-4 bg-blue-50 dark:bg-blue-950/50 rounded-full text-blue-600 dark:text-blue-400">
                     <i class="fas fa-users fa-xl"></i>
                 </div>
             </div>
         </div>
 
-        <p class="text-sm text-gray-500 mb-4 ml-1">Dica: <b>Clique em qualquer painel abaixo</b> para abrir a lista de pacientes correspondentes.</p>
+        <p class="text-sm text-gray-600 dark:text-zinc-300 mb-4 ml-1">Dica: <b>Clique em qualquer painel abaixo</b> para abrir a lista de pacientes correspondentes.</p>
         
         <!-- ========================================== -->
-        <!-- PAINÉIS DE DETALHAMENTO (Substituindo Gráficos) -->
+        <!-- PAINÉIS DE DETALHAMENTO -->
         <!-- ========================================== -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
             
             <!-- Bloco 1: Consultas -->
             <div>
-                <h3 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-user-md mr-2 text-emerald-600"></i> Consultas Médica / Enf.</h3>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-3"><i class="fas fa-user-md mr-2 text-emerald-600 dark:text-emerald-400"></i> Consultas Médica / Enf.</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="card border-l-4 border-emerald-500 flex items-center justify-between cursor-pointer hover:bg-emerald-50 p-4" onclick="abrirModalFiltro('Em dia', 'consulta')">
+                    <div class="card border-l-4 border-emerald-500 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('Em dia', 'consulta')">
                         <div>
-                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Em Dia</p>
-                            <h2 id="val-cons-dia" class="text-2xl font-bold text-gray-800">0</h2>
-                            <p class="text-xs text-emerald-600 mt-1">Até 180 dias • <span id="pct-cons-dia" class="font-bold">0%</span></p>
+                            <p class="text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Em Dia</p>
+                            <h2 id="val-cons-dia" class="text-2xl font-bold text-gray-900 dark:text-white">0</h2>
+                            <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Até 180 dias • <span id="pct-cons-dia" class="font-bold">0%</span></p>
                         </div>
-                        <div class="p-3 bg-emerald-50 rounded-full text-emerald-500"><i class="fas fa-check"></i></div>
+                        <div class="p-3 bg-emerald-50 dark:bg-emerald-950/50 rounded-full text-emerald-500 dark:text-emerald-400"><i class="fas fa-check"></i></div>
                     </div>
-                    <div class="card border-l-4 border-amber-500 flex items-center justify-between cursor-pointer hover:bg-amber-50 p-4" onclick="abrirModalFiltro('Pendente', 'consulta')">
+                    <div class="card border-l-4 border-amber-500 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('Pendente', 'consulta')">
                         <div>
-                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Pendente</p>
-                            <h2 id="val-cons-pend" class="text-2xl font-bold text-gray-800">0</h2>
-                            <p class="text-xs text-amber-600 mt-1">+ de 180 dias • <span id="pct-cons-pend" class="font-bold">0%</span></p>
+                            <p class="text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Pendente</p>
+                            <h2 id="val-cons-pend" class="text-2xl font-bold text-gray-900 dark:text-white">0</h2>
+                            <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">+ de 180 dias • <span id="pct-cons-pend" class="font-bold">0%</span></p>
                         </div>
-                        <div class="p-3 bg-amber-50 rounded-full text-amber-500"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="p-3 bg-amber-50 dark:bg-amber-950/50 rounded-full text-amber-500 dark:text-amber-400"><i class="fas fa-exclamation-triangle"></i></div>
                     </div>
                 </div>
             </div>
 
             <!-- Bloco 2: Visitas -->
             <div>
-                <h3 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-home mr-2 text-purple-600"></i> Visitas Domiciliares</h3>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-3"><i class="fas fa-home mr-2 text-purple-600 dark:text-purple-400"></i> Visitas Domiciliares</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="card border-l-4 border-purple-500 flex items-center justify-between cursor-pointer hover:bg-purple-50 p-4" onclick="abrirModalFiltro('Em dia', 'visita')">
+                    <div class="card border-l-4 border-purple-500 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('Em dia', 'visita')">
                         <div>
-                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Em Dia</p>
-                            <h2 id="val-vis-dia" class="text-2xl font-bold text-gray-800">0</h2>
-                            <p class="text-xs text-purple-600 mt-1">Até 30 dias • <span id="pct-vis-dia" class="font-bold">0%</span></p>
+                            <p class="text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Em Dia</p>
+                            <h2 id="val-vis-dia" class="text-2xl font-bold text-gray-900 dark:text-white">0</h2>
+                            <p class="text-xs text-purple-600 dark:text-purple-400 mt-1">Até 30 dias • <span id="pct-vis-dia" class="font-bold">0%</span></p>
                         </div>
-                        <div class="p-3 bg-purple-50 rounded-full text-purple-500"><i class="fas fa-check"></i></div>
+                        <div class="p-3 bg-purple-50 dark:bg-purple-950/50 rounded-full text-purple-500 dark:text-purple-400"><i class="fas fa-check"></i></div>
                     </div>
-                    <div class="card border-l-4 border-pink-500 flex items-center justify-between cursor-pointer hover:bg-pink-50 p-4" onclick="abrirModalFiltro('Pendente', 'visita')">
+                    <div class="card border-l-4 border-pink-500 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('Pendente', 'visita')">
                         <div>
-                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Pendente</p>
-                            <h2 id="val-vis-pend" class="text-2xl font-bold text-gray-800">0</h2>
-                            <p class="text-xs text-pink-600 mt-1">+ de 30 dias • <span id="pct-vis-pend" class="font-bold">0%</span></p>
+                            <p class="text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Pendente</p>
+                            <h2 id="val-vis-pend" class="text-2xl font-bold text-gray-900 dark:text-white">0</h2>
+                            <p class="text-xs text-pink-600 dark:text-pink-400 mt-1">+ de 30 dias • <span id="pct-vis-pend" class="font-bold">0%</span></p>
                         </div>
-                        <div class="p-3 bg-pink-50 rounded-full text-pink-500"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="p-3 bg-pink-50 dark:bg-pink-950/50 rounded-full text-pink-500 dark:text-pink-400"><i class="fas fa-exclamation-triangle"></i></div>
                     </div>
                 </div>
             </div>
 
             <!-- Bloco 3: PA -->
             <div>
-                <h3 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-stethoscope mr-2 text-blue-600"></i> Pressão Arterial (PA)</h3>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-3"><i class="fas fa-stethoscope mr-2 text-blue-600 dark:text-blue-400"></i> Pressão Arterial (PA)</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="card border-l-4 border-blue-500 flex items-center justify-between cursor-pointer hover:bg-blue-50 p-4" onclick="abrirModalFiltro('Em dia', 'pa')">
+                    <div class="card border-l-4 border-blue-500 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('Em dia', 'pa')">
                         <div>
-                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Em Dia</p>
-                            <h2 id="val-pa-dia" class="text-2xl font-bold text-gray-800">0</h2>
-                            <p class="text-xs text-blue-600 mt-1">Até 180 dias • <span id="pct-pa-dia" class="font-bold">0%</span></p>
+                            <p class="text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Em Dia</p>
+                            <h2 id="val-pa-dia" class="text-2xl font-bold text-gray-900 dark:text-white">0</h2>
+                            <p class="text-xs text-blue-600 dark:text-blue-400 mt-1">Até 180 dias • <span id="pct-pa-dia" class="font-bold">0%</span></p>
                         </div>
-                        <div class="p-3 bg-blue-50 rounded-full text-blue-500"><i class="fas fa-check"></i></div>
+                        <div class="p-3 bg-blue-50 dark:bg-blue-950/50 rounded-full text-blue-500 dark:text-blue-400"><i class="fas fa-check"></i></div>
                     </div>
-                    <div class="card border-l-4 border-gray-400 flex items-center justify-between cursor-pointer hover:bg-gray-50 p-4" onclick="abrirModalFiltro('Pendente', 'pa')">
+                    <div class="card border-l-4 border-gray-400 dark:border-zinc-600 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('Pendente', 'pa')">
                         <div>
-                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Pendente</p>
-                            <h2 id="val-pa-pend" class="text-2xl font-bold text-gray-800">0</h2>
-                            <p class="text-xs text-gray-600 mt-1">+ de 180 dias • <span id="pct-pa-pend" class="font-bold">0%</span></p>
+                            <p class="text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Pendente</p>
+                            <h2 id="val-pa-pend" class="text-2xl font-bold text-gray-900 dark:text-white">0</h2>
+                            <p class="text-xs text-gray-600 dark:text-zinc-400 mt-1">+ de 180 dias • <span id="pct-pa-pend" class="font-bold">0%</span></p>
                         </div>
-                        <div class="p-3 bg-gray-100 rounded-full text-gray-500"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="p-3 bg-gray-100 dark:bg-zinc-800 rounded-full text-gray-500 dark:text-zinc-400"><i class="fas fa-exclamation-triangle"></i></div>
                     </div>
                 </div>
             </div>
 
             <!-- Bloco 4: Antropometria -->
             <div>
-                <h3 class="text-lg font-bold text-gray-800 mb-3"><i class="fas fa-weight mr-2 text-teal-600"></i> Antropometria</h3>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-3"><i class="fas fa-weight mr-2 text-teal-600 dark:text-teal-400"></i> Antropometria</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="card border-l-4 border-teal-500 flex items-center justify-between cursor-pointer hover:bg-teal-50 p-4" onclick="abrirModalFiltro('Em dia', 'antropo')">
+                    <div class="card border-l-4 border-teal-500 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('Em dia', 'antropo')">
                         <div>
-                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Em Dia</p>
-                            <h2 id="val-antropo-dia" class="text-2xl font-bold text-gray-800">0</h2>
-                            <p class="text-xs text-teal-600 mt-1">Até 365 dias • <span id="pct-antropo-dia" class="font-bold">0%</span></p>
+                            <p class="text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Em Dia</p>
+                            <h2 id="val-antropo-dia" class="text-2xl font-bold text-gray-900 dark:text-white">0</h2>
+                            <p class="text-xs text-teal-600 dark:text-teal-400 mt-1">Até 365 dias • <span id="pct-antropo-dia" class="font-bold">0%</span></p>
                         </div>
-                        <div class="p-3 bg-teal-50 rounded-full text-teal-500"><i class="fas fa-check"></i></div>
+                        <div class="p-3 bg-teal-50 dark:bg-teal-950/50 rounded-full text-teal-500 dark:text-teal-400"><i class="fas fa-check"></i></div>
                     </div>
-                    <div class="card border-l-4 border-orange-500 flex items-center justify-between cursor-pointer hover:bg-orange-50 p-4" onclick="abrirModalFiltro('Pendente', 'antropo')">
+                    <div class="card border-l-4 border-orange-500 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('Pendente', 'antropo')">
                         <div>
-                            <p class="text-xs text-gray-500 font-semibold mb-1 uppercase">Pendente</p>
-                            <h2 id="val-antropo-pend" class="text-2xl font-bold text-gray-800">0</h2>
-                            <p class="text-xs text-orange-600 mt-1">+ de 365 dias • <span id="pct-antropo-pend" class="font-bold">0%</span></p>
+                            <p class="text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Pendente</p>
+                            <h2 id="val-antropo-pend" class="text-2xl font-bold text-gray-900 dark:text-white">0</h2>
+                            <p class="text-xs text-orange-600 dark:text-orange-400 mt-1">+ de 365 dias • <span id="pct-antropo-pend" class="font-bold">0%</span></p>
                         </div>
-                        <div class="p-3 bg-orange-50 rounded-full text-orange-500"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="p-3 bg-orange-50 dark:bg-orange-950/50 rounded-full text-orange-500 dark:text-orange-400"><i class="fas fa-exclamation-triangle"></i></div>
                     </div>
                 </div>
             </div>
@@ -248,54 +283,54 @@
 <!-- ============================================== -->
 <!-- MODAL: LISTA DE PACIENTES -->
 <!-- ============================================== -->
-<div id="pacientesModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col overflow-hidden">
+<div id="pacientesModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-zinc-800">
         
-        <div class="p-5 border-b border-gray-200 bg-red-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-20">
+        <div class="p-5 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-black flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-20">
             <div>
-                <h2 class="text-2xl font-bold text-red-900" id="modalTitle">Pacientes Hipertensos</h2>
-                <p class="text-sm text-gray-600 mt-1" id="modalSubtitle">Carregando...</p>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white" id="modalTitle">Pacientes Hipertensos</h2>
+                <p class="text-sm text-gray-500 dark:text-zinc-400 mt-1 font-medium" id="modalSubtitle">Carregando...</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-3 w-full md:w-auto" id="controlesModal">
-                <label for="sortTabela" class="text-sm font-medium text-gray-700 whitespace-nowrap"><i class="fas fa-sort-amount-down-alt mr-1"></i> Ordenar:</label>
-                <select id="sortTabela" onchange="ordenarTabelaModal()" class="text-sm border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 p-2 bg-white">
+                <label for="sortTabela" class="text-sm font-bold text-gray-700 dark:text-zinc-300 whitespace-nowrap"><i class="fas fa-sort-amount-down-alt mr-1"></i> Ordenar:</label>
+                <select id="sortTabela" onchange="ordenarTabelaModal()" class="text-sm border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm focus:ring-blue-500 p-2 bg-white dark:bg-zinc-800 text-gray-800 dark:text-gray-200 font-medium outline-none">
                     <option value="default">Por Nome (A-Z)</option>
                     <option value="consulta_maior">Maior tempo s/ Consulta</option>
                     <option value="visita_maior">Maior tempo s/ Visita</option>
                 </select>
 
-                <button onclick="fecharModal()" class="text-gray-500 hover:text-red-600 transition focus:outline-none ml-2">
-                    <i class="fas fa-times fa-xl"></i>
+                <button onclick="fecharModal()" class="text-gray-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition focus:outline-none ml-2 bg-gray-200 dark:bg-zinc-800 hover:bg-red-100 dark:hover:bg-red-950/50 rounded-full w-8 h-8 flex items-center justify-center">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         </div>
         
-        <div class="p-0 flex-1 overflow-auto bg-white relative z-10">
-            <div id="modalEmptyState" class="hidden p-10 text-center text-gray-500">
-                <i class="fas fa-file-csv fa-3x mb-4 text-gray-300"></i>
-                <p class="text-lg">Faça o upload da sua planilha primeiro.</p>
+        <div class="p-0 flex-1 overflow-auto bg-white dark:bg-zinc-900 relative z-10">
+            <div id="modalEmptyState" class="hidden p-10 text-center text-gray-500 dark:text-zinc-500">
+                <i class="fas fa-file-csv fa-3x mb-4 text-gray-300 dark:text-zinc-800"></i>
+                <p class="text-lg font-medium">Faça o upload da sua planilha primeiro.</p>
             </div>
             
             <table id="modalTable" class="w-full text-left border-collapse min-w-[800px]">
-                <thead class="bg-red-100 text-red-900 sticky top-0 z-10 shadow-sm text-xs uppercase font-bold tracking-wider">
+                <thead class="bg-gray-100 dark:bg-black text-gray-700 dark:text-zinc-300 sticky top-0 z-10 shadow-sm text-xs uppercase font-bold tracking-wider">
                     <tr>
-                        <th class="p-4 border-b">Nome / Idade</th>
-                        <th class="p-4 border-b text-center">Tempo s/ Consulta</th>
-                        <th class="p-4 border-b text-center">Tempo s/ Visita</th>
-                        <th class="p-4 border-b text-center">Tempo s/ PA</th>
-                        <th class="p-4 border-b text-center">Tempo s/ Antropometria</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800">Nome / Idade</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">Tempo s/ Consulta</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">Tempo s/ Visita</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">Tempo s/ PA</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">Tempo s/ Antropometria</th>
                     </tr>
                 </thead>
-                <tbody id="modalTableBody" class="text-sm text-gray-700 divide-y divide-gray-100"></tbody>
+                <tbody id="modalTableBody" class="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-zinc-800 font-medium"></tbody>
             </table>
         </div>
         
-        <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end items-center gap-3 z-20">
-            <button id="btnImprimirLista" onclick="imprimirLista()" class="hidden bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700 transition font-medium flex items-center shadow-sm">
+        <div class="p-4 border-t border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-black flex justify-end items-center gap-3 z-20">
+            <button id="btnImprimirLista" onclick="imprimirLista()" class="hidden bg-gray-800 dark:bg-blue-700 text-white px-5 py-2.5 rounded-lg hover:bg-gray-900 dark:hover:bg-blue-800 transition font-bold flex items-center shadow-sm">
                 <i class="fas fa-print mr-2"></i> Imprimir Lista
             </button>
-            <button onclick="fecharModal()" class="bg-gray-200 text-gray-800 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition font-medium">
+            <button onclick="fecharModal()" class="bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-200 px-6 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition font-bold shadow-sm">
                 Fechar
             </button>
         </div>
@@ -303,7 +338,26 @@
 </div>
 
 <script>
-    // === MENU MOBILE (sidebar em drawer) ===
+    // === Lógica do Tema Escuro ===
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    if (document.documentElement.classList.contains('dark')) {
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+    }
+
+    themeToggleBtn.addEventListener('click', function() {
+        document.documentElement.classList.toggle('dark');
+        if (document.documentElement.classList.contains('dark')) {
+            localStorage.setItem('theme', 'dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        } else {
+            localStorage.setItem('theme', 'light');
+            themeIcon.classList.replace('fa-sun', 'fa-moon');
+        }
+    });
+
+    // === MENU MOBILE ===
     function abrirMenuMobile() {
         document.getElementById('sidebar').classList.remove('-translate-x-full');
         document.getElementById('sidebarOverlay').classList.remove('hidden');
@@ -318,9 +372,6 @@
     let resultadosBusca = []; 
     let pacientesAtuaisModal = [];
 
-    // Prazos (em dias) usados para considerar cada indicador "Em dia".
-    // Centralizados aqui para não precisar alterar em vários lugares do
-    // arquivo caso a regra do programa mude.
     const PRAZO_CONSULTA_DIAS = 180;
     const PRAZO_VISITA_DIAS = 30;
     const PRAZO_PA_DIAS = 180;
@@ -334,20 +385,16 @@
         });
     }
 
-    // Cria uma data a partir de dd/mm/aaaa e confirma que ela é uma data real
-    // (o construtor Date "corrige" datas impossíveis silenciosamente, ex.:
-    // 31/02/2024 vira 02/03/2024 em vez de dar erro - isso pega esse caso).
     function parseDataBR(dia, mes, ano) {
         const d = parseInt(dia, 10), m = parseInt(mes, 10), a = parseInt(ano, 10);
         if (isNaN(d) || isNaN(m) || isNaN(a)) return null;
         const dataObj = new Date(a, m - 1, d);
         if (dataObj.getFullYear() !== a || dataObj.getMonth() !== m - 1 || dataObj.getDate() !== d) {
-            return null; // data inválida (ex.: 31/02, 32/01)
+            return null;
         }
         return dataObj;
     }
 
-    // Calcular dias a partir de uma data única
     function calcularDiasAtras(dataStr) {
         if (!dataStr || String(dataStr).trim() === '' || String(dataStr).trim() === '-') return null;
         
@@ -374,7 +421,6 @@
         return diffDias >= 0 ? diffDias : 0; 
     }
 
-    // Métrica de Visita (Mais recente na coluna)
     function getDiasVisita(textoDatas) {
         if (!textoDatas || String(textoDatas).trim() === '' || String(textoDatas).trim() === '-') return null;
         
@@ -405,7 +451,6 @@
         
         if (datasValidas.length === 0) return null;
         
-        // Ordenar pela data mais recente
         datasValidas.sort((a, b) => b - a);
         
         const diffTempo = hoje - datasValidas[0];
@@ -414,8 +459,6 @@
         return diffDias >= 0 ? diffDias : 0;
     }
 
-    // Evita que nomes com <, >, & ou aspas quebrem o HTML ao serem inseridos
-    // via innerHTML.
     function escapeHtml(texto) {
         return String(texto)
             .replace(/&/g, '&amp;')
@@ -429,6 +472,22 @@
     function getDiasPA(row) { return calcularDiasAtras(row['Data da última medição de pressão arterial']); }
     function getDiasAntropo(row) { return calcularDiasAtras(row['Data da última medição de peso e altura']); }
 
+    // === GERENCIAMENTO DE LOCALSTORAGE ===
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedData = localStorage.getItem('hiper_csv_data');
+        if (savedData) {
+            try {
+                dadosBrutos = JSON.parse(savedData);
+                if (dadosBrutos.length > 0) {
+                    gerarBotoesMicroarea();
+                    processAndUpdateDashboard();
+                }
+            } catch (err) {
+                console.error("Erro ao carregar dados do LocalStorage", err);
+            }
+        }
+    });
+
     // === PROCESSAMENTO DE PLANILHAS ===
     document.getElementById('csvFileInput').addEventListener('change', e => {
         const file = e.target.files[0]; if(!file) return;
@@ -440,10 +499,6 @@
                 try {
                     const data = new Uint8Array(ev.target.result);
                     const workbook = XLSX.read(data, {type: 'array'});
-                    // raw:false + dateNF força o SheetJS a devolver as datas já
-                    // formatadas como texto "dd/mm/aaaa" em vez de número serial
-                    // do Excel (ex.: 45932), que antes era interpretado como o
-                    // "ano 45932" pelo parser de datas e quebrava os indicadores.
                     const jsonResult = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {
                         defval: "",
                         raw: false,
@@ -484,7 +539,6 @@
         }
     });
 
-    // Colunas que os indicadores desta página dependem para funcionar.
     const COLUNAS_ESPERADAS = [
         'Nome', 'Microárea',
         'Data da última consulta',
@@ -503,10 +557,19 @@
         }
 
         dadosBrutos = dataArray;
+        try {
+            localStorage.setItem('hiper_csv_data', JSON.stringify(dadosBrutos));
+        } catch (err) {
+            console.warn("Arquivo muito grande para o LocalStorage.", err);
+        }
+
         microareaSelecionada = 'TODAS'; 
         gerarBotoesMicroarea(); 
         processAndUpdateDashboard(); 
     }
+
+    const activeClasses = ['bg-gray-800', 'dark:bg-blue-700', 'text-white', 'border-transparent'];
+    const inactiveClasses = ['bg-white', 'dark:bg-zinc-800', 'text-gray-700', 'dark:text-zinc-300', 'border-gray-300', 'dark:border-zinc-700', 'hover:bg-gray-100', 'dark:hover:bg-zinc-700'];
 
     function gerarBotoesMicroarea() {
         const set = new Set();
@@ -516,7 +579,7 @@
         
         const btnTodas = document.createElement('button');
         btnTodas.id = 'btn-ma-TODAS';
-        btnTodas.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-red-700 text-white shadow-sm';
+        btnTodas.className = `ma-btn px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm border ${activeClasses.join(' ')}`;
         btnTodas.innerHTML = '<i class="fas fa-globe mr-1"></i> Todas (Geral)';
         btnTodas.onclick = () => filtrarPorMicroarea('TODAS');
         container.appendChild(btnTodas);
@@ -524,8 +587,8 @@
         [...set].sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(ma => {
             const btn = document.createElement('button');
             btn.id = 'btn-ma-' + ma.replace(/\W/g, '_');
-            btn.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-white text-red-800 border border-red-200 hover:bg-red-50 shadow-sm';
-            btn.innerHTML = `<i class="fas fa-map-marker-alt text-red-400 mr-1"></i> Microárea ${ma}`;
+            btn.className = `ma-btn px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm border ${inactiveClasses.join(' ')}`;
+            btn.innerHTML = `<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> Microárea ${ma}`;
             btn.onclick = () => filtrarPorMicroarea(ma);
             container.appendChild(btn);
         });
@@ -534,46 +597,42 @@
     function filtrarPorMicroarea(ma) {
         microareaSelecionada = ma;
         document.querySelectorAll('.ma-btn').forEach(b => {
-            b.classList.remove('bg-red-700', 'text-white'); b.classList.add('bg-white', 'text-red-800', 'border-red-200');
+            b.classList.remove(...activeClasses);
+            b.classList.add(...inactiveClasses);
         });
         const activeBtn = document.getElementById('btn-ma-' + ma.replace(/\W/g, '_'));
         if (activeBtn) {
-            activeBtn.classList.remove('bg-white', 'text-red-800', 'border-red-200'); activeBtn.classList.add('bg-red-700', 'text-white');
+            activeBtn.classList.remove(...inactiveClasses);
+            activeBtn.classList.add(...activeClasses);
         }
         processAndUpdateDashboard();
     }
 
-    // === LÓGICA DE INDICADORES (PAINÉIS) ===
     function processAndUpdateDashboard() {
         const dados = getFiltrados(); 
         let total = dados.length;
 
-        let cons = [0,0]; // Em dia, Pendente
+        let cons = [0,0]; 
         let vis = [0,0]; 
         let pa = [0,0]; 
         let antropo = [0,0]; 
 
         dados.forEach(r => {
-            // Consulta
             let diasCons = getDiasConsulta(r);
             if (diasCons !== null && diasCons <= PRAZO_CONSULTA_DIAS) cons[0]++; else cons[1]++;
 
-            // Visita (Data mais recente <= 30 dias)
             let diasVisita = getDiasVisita(r['Últimas visitas domiciliares']);
             if (diasVisita !== null && diasVisita <= PRAZO_VISITA_DIAS) vis[0]++; else vis[1]++;
 
-            // PA
             let diasPA = getDiasPA(r);
             if (diasPA !== null && diasPA <= PRAZO_PA_DIAS) pa[0]++; else pa[1]++;
 
-            // Antropometria
             let diasAntropo = getDiasAntropo(r);
             if (diasAntropo !== null && diasAntropo <= PRAZO_ANTROPO_DIAS) antropo[0]++; else antropo[1]++;
         });
 
         document.getElementById('kpi-total').innerText = total.toLocaleString('pt-BR');
 
-        // Função utilitária para atualizar os valores numéricos e percentuais
         const updateCard = (valId, pctId, count) => {
             const valEl = document.getElementById(valId);
             const pctEl = document.getElementById(pctId);
@@ -597,7 +656,6 @@
         updateCard('val-antropo-pend', 'pct-antropo-pend', antropo[1]);
     }
 
-    // === BUSCA E MODAL ===
     function buscarPaciente(texto) {
         const q = texto.trim().toLowerCase();
         const box = document.getElementById('resultadoBusca');
@@ -605,13 +663,10 @@
         resultadosBusca = getFiltrados().filter(r => String(r['Nome'] || '').toLowerCase().includes(q)).slice(0, 20);
         box.classList.remove('hidden');
         if (resultadosBusca.length > 0) {
-            box.innerHTML = `<div class="text-xs text-gray-500 mb-2">${resultadosBusca.length} resultado(s)</div>
+            box.innerHTML = `<div class="text-xs text-gray-500 dark:text-zinc-400 mb-2 font-bold">${resultadosBusca.length} resultado(s)</div>
                 <div class="flex flex-wrap gap-2">
-                    ${resultadosBusca.map((r, i) => `<button data-busca-idx="${i}" class="busca-resultado-btn px-3 py-2 bg-white border border-red-200 rounded-lg text-sm text-red-700 shadow-sm">${escapeHtml(r['Nome'] || 'Sem nome')}</button>`).join('')}
+                    ${resultadosBusca.map((r, i) => `<button data-busca-idx="${i}" class="busca-resultado-btn px-3 py-2 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-700 transition shadow-sm">${escapeHtml(r['Nome'] || 'Sem nome')}</button>`).join('')}
                 </div>`;
-            // Usamos addEventListener + data-attribute em vez de onclick inline
-            // com o nome interpolado: nomes com apóstrofo (ex.: "D'Ávila")
-            // quebravam a string do atributo onclick e o botão parava de funcionar.
             box.querySelectorAll('.busca-resultado-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const r = resultadosBusca[parseInt(btn.dataset.buscaIdx, 10)];
@@ -619,7 +674,7 @@
                 });
             });
         } else {
-            box.innerHTML = '<div class="text-sm text-gray-500">Nenhum paciente encontrado.</div>';
+            box.innerHTML = '<div class="text-sm text-gray-500 dark:text-zinc-400 font-medium">Nenhum paciente encontrado.</div>';
         }
     }
     function abrirResultadosBusca() {
@@ -678,9 +733,9 @@
     }
 
     function formatarDias(dias, maxBom) {
-        if (dias === null) return '<span class="text-gray-400 italic">Sem Registro</span>';
-        if (dias <= maxBom) return `<span class="text-emerald-600 font-bold">${dias} dias</span>`;
-        return `<span class="text-red-600 font-bold">${dias} dias</span>`;
+        if (dias === null) return '<span class="text-gray-400 dark:text-zinc-500 italic">Sem Registro</span>';
+        if (dias <= maxBom) return `<span class="text-emerald-600 dark:text-emerald-400 font-bold">${dias} dias</span>`;
+        return `<span class="text-red-600 dark:text-red-400 font-bold">${dias} dias</span>`;
     }
 
     function ordenarTabelaModal() {
@@ -698,8 +753,8 @@
         
         tbody.innerHTML = pacientesAtuaisModal.map(p => {
             return `
-                <tr class="border-b border-gray-100 hover:bg-red-50 transition">
-                    <td class="p-4 font-medium text-gray-900">${escapeHtml(p['Nome'] || '-')} <br><span class="text-xs text-gray-500">${escapeHtml(p['Idade']||'')}</span></td>
+                <tr class="border-b border-gray-100 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition">
+                    <td class="p-4 font-bold text-gray-900 dark:text-gray-100">${escapeHtml(p['Nome'] || '-')} <br><span class="text-xs text-gray-500 dark:text-zinc-400 font-medium">${escapeHtml(p['Idade']||'')}</span></td>
                     <td class="p-4 text-center">${formatarDias(getDiasConsulta(p), PRAZO_CONSULTA_DIAS)}</td>
                     <td class="p-4 text-center">${formatarDias(getDiasVisita(p['Últimas visitas domiciliares']), PRAZO_VISITA_DIAS)}</td>
                     <td class="p-4 text-center">${formatarDias(getDiasPA(p), PRAZO_PA_DIAS)}</td>
@@ -717,9 +772,9 @@
         const janela = window.open('', '_blank', 'width=1000,height=700');
         janela.document.write(`
             <html><head><title>Relatório - ${titulo}</title><style>
-            body{font-family:sans-serif;padding:20px;} h1{color:#7f1d1d;} 
+            body{font-family:sans-serif;padding:20px;} h1{color:#1e3a8a;} 
             table{width:100%;border-collapse:collapse;margin-top:20px;font-size:12px;}
-            th,td{border:1px solid #ddd;padding:8px;text-align:center;} th{background:#fef2f2;color:#7f1d1d;}
+            th,td{border:1px solid #ddd;padding:8px;text-align:center;} th{background:#eff6ff;color:#1e3a8a;}
             </style></head><body><h1>${titulo}</h1>${tabela}</body></html>
         `);
         janela.document.close(); janela.focus(); setTimeout(() => { janela.print(); janela.close(); }, 500);
