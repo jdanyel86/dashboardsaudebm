@@ -2,67 +2,108 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Painel Saúde - Odontológico</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <!-- Papa Parse para ler CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <!-- SheetJS (XLSX) para ler arquivos do Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    
+    <!-- Script Anti-FOUC para Tema Escuro -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px; transition: transform 0.2s; }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        body { font-family: 'Inter', sans-serif; }
+        body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+        
+        .card { border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 18px; transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, border-color 0.3s; }
+        
+        /* Tema Claro: Cartões */
+        .card { background: white; border: 1px solid #e2e8f0; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 8px 12px rgba(0,0,0,0.04); border-color: #cbd5e1; }
+        
+        /* Tema Escuro: Cartões (Preto Neutro) */
+        .dark .card { background: #121212; border-color: #27272a; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5); }
+        .dark .card:hover { border-color: #3f3f46; box-shadow: 0 8px 12px rgba(0,0,0,0.6); }
+
         .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
         .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+        
+        /* Scrollbar Claro */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Scrollbar Escuro */
+        .dark ::-webkit-scrollbar-track { background: #000000; }
+        .dark ::-webkit-scrollbar-thumb { background: #27272a; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
     </style>
 </head>
-<body class="text-gray-800 relative">
+<body class="text-gray-800 dark:text-gray-200 bg-slate-50 dark:bg-black transition-colors duration-300 relative">
 
 <div class="flex h-screen overflow-hidden">
+    <!-- Overlay Mobile -->
+    <div id="sidebarOverlay" onclick="fecharMenuMobile()" class="hidden fixed inset-0 bg-black/50 z-30 md:hidden"></div>
+
     <!-- Sidebar -->
-    <aside class="w-64 bg-cyan-900 text-white flex-col transition-all duration-300 hidden md:flex shadow-xl overflow-y-auto z-20">
-        <div class="p-6 text-2xl font-bold border-b border-cyan-800 text-center flex items-center justify-center">
-            <i class="fas fa-tooth mr-3 text-cyan-300"></i> PSF 1
+    <aside id="sidebar" class="w-64 bg-white dark:bg-black text-gray-700 dark:text-gray-300 flex flex-col shadow-sm overflow-y-auto z-40
+        fixed inset-y-0 left-0 -translate-x-full transition-transform duration-300
+        md:static md:translate-x-0 border-r border-gray-200 dark:border-zinc-900">
+        <div class="p-6 text-2xl font-bold border-b border-gray-100 dark:border-zinc-900 flex items-center justify-between md:justify-center text-gray-800 dark:text-gray-100">
+            <span class="flex items-center">
+                <img src="logo 01.png" alt="Logo PSF 1" class="h-8 mr-3"> PSF 1
+            </span>
+            <button onclick="fecharMenuMobile()" class="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white p-1" aria-label="Fechar menu">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-        <nav class="flex-1 p-4 space-y-3 mt-4">
-             <a href="index.html" class="flex items-center p-3 bg-indigo-800 rounded-lg text-white font-medium">
+        <nav class="flex-1 p-4 space-y-2 mt-4">
+             <a href="index.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Home
             </a>
-            <a href="Gestantes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Gestantes.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Gestantes
             </a>
-            <a href="Infantil.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Infantil.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                Crianças
             </a>
-            <a href="Diabeticos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Diabeticos.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Diabéticos
             </a>
-            <a href="Hipertensos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Hipertensos.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Hipertensos
             </a>
-            <a href="Mulher.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Mulher.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Mulher
             </a>
-            <a href="Idosos.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="Idosos.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 Idosos
             </a>
-            <a href="agentes.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            <a href="agentes.html" class="flex items-center p-3 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-zinc-900 hover:text-gray-900 dark:hover:text-gray-100 transition">
                 ACS
-            <a href="odonto.html" class="flex items-center p-3 rounded-lg text-indigo-200 hover:bg-indigo-800 hover:text-white transition">
+            </a>
+            <a href="odonto.html" class="flex items-center p-3 bg-cyan-50 dark:bg-cyan-950/40 rounded-lg text-cyan-700 dark:text-cyan-400 font-bold border border-cyan-100 dark:border-cyan-900/50 shadow-sm transition">
                 Odonto
             </a>
         </nav>
-        <div class="p-4 text-xs text-cyan-300 text-center border-t border-cyan-800">
+        <div class="p-4 text-xs text-gray-400 dark:text-zinc-500 font-medium text-center border-t border-gray-100 dark:border-zinc-900">
             José Danyel Siqueira do Nascimento
         </div>
     </aside>
@@ -70,17 +111,24 @@
     <!-- Main Content -->
     <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Acompanhamento Odontológico</h1>
-                <p class="text-gray-500 mt-1 text-sm md:text-base">Monitoramento de Primeiras Consultas, Tratamentos, ART, Escovação, Exodontias e Preventivos.</p>
+            <div class="flex items-start gap-3 w-full md:w-auto">
+                <button onclick="abrirMenuMobile()" class="md:hidden mt-1 text-gray-600 dark:text-gray-300 hover:text-cyan-600 p-2 -ml-2" aria-label="Abrir menu">
+                    <i class="fas fa-bars fa-lg"></i>
+                </button>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">Acompanhamento Odontológico</h1>
+                    <p class="text-gray-500 dark:text-zinc-400 mt-1 text-sm md:text-base">Monitoramento de Primeiras Consultas, Tratamentos, ART, Escovação, Exodontias e Preventivos.</p>
+                </div>
             </div>
             
-            <div class="flex items-center gap-2 flex-wrap">
-                <button onclick="limparDadosLocais()" class="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-300 transition text-sm font-medium">
-                    <i class="fas fa-eraser mr-2"></i> Limpar Dados
+            <div class="flex items-center gap-2 flex-wrap w-full md:w-auto">
+                <!-- Botão Toggle Tema Escuro -->
+                <button id="themeToggle" class="bg-white dark:bg-zinc-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-zinc-800 px-4 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition shadow-sm flex items-center justify-center font-bold">
+                    <i class="fas fa-moon" id="themeIcon"></i>
                 </button>
-                <div class="file-upload-wrapper">
-                    <button class="bg-cyan-600 text-white px-5 py-2.5 rounded-lg hover:bg-cyan-700 transition shadow flex items-center cursor-pointer text-sm font-medium">
+
+                <div class="file-upload-wrapper w-full md:w-auto">
+                    <button class="w-full md:w-auto bg-cyan-600 dark:bg-cyan-700 text-white px-5 py-2.5 rounded-lg hover:bg-cyan-700 dark:hover:bg-cyan-800 transition shadow flex items-center justify-center cursor-pointer text-sm font-medium">
                         <i class="fas fa-file-excel mr-2"></i> Carregar Planilha
                     </button>
                     <input type="file" id="csvFileInput" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
@@ -89,119 +137,154 @@
         </header>
 
         <!-- Barra de Busca -->
-        <div class="card mb-4 border border-cyan-100 p-4">
+        <div class="card mb-4 border border-gray-200 dark:border-zinc-800 p-4 bg-white dark:bg-zinc-900 shadow-sm">
             <div class="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
                 <div class="relative flex-1">
-                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400 dark:text-zinc-500"></i>
                     <input id="buscaPaciente" type="search" placeholder="Buscar paciente por nome..."
-                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-cyan-200 focus:border-cyan-500 text-sm"
+                           class="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-zinc-700 rounded-lg outline-none focus:ring-2 focus:ring-cyan-500 text-sm bg-gray-50 dark:bg-black text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-zinc-500 font-medium transition"
                            oninput="buscarPaciente(this.value)">
                 </div>
-                <button onclick="abrirResultadosBusca()" class="bg-cyan-50 text-cyan-800 border border-cyan-200 px-4 py-2.5 rounded-lg hover:bg-cyan-100 text-sm font-semibold transition">
-                    <i class="fas fa-list mr-1"></i> Ver Resultados
+                <button onclick="abrirResultadosBusca()" class="bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-zinc-700 px-4 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700 text-sm font-bold transition shadow-sm">
+                    <i class="fas fa-list mr-1 text-gray-400 dark:text-zinc-400"></i> Ver Resultados
                 </button>
             </div>
-            <div id="resultadoBusca" class="hidden mt-3 p-3 bg-gray-50 rounded border border-gray-200"></div>
+            <div id="resultadoBusca" class="hidden mt-3 p-3 bg-gray-50 dark:bg-black rounded-lg border border-gray-200 dark:border-zinc-800"></div>
         </div>
 
         <!-- Filtros de Microárea -->
-        <div class="bg-white p-4 rounded-xl shadow-sm mb-8 border border-cyan-100">
-            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3"><i class="fas fa-filter mr-1"></i> Filtrar por Microárea:</p>
+        <div class="bg-white dark:bg-zinc-900 p-4 rounded-xl shadow-sm mb-8 border border-gray-200 dark:border-zinc-800 transition-colors duration-300">
+            <p class="text-xs font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider mb-3"><i class="fas fa-filter mr-1 text-gray-400"></i> Filtrar por Microárea:</p>
             <div id="microareaButtonsContainer" class="flex flex-wrap gap-2">
-                <span class="text-sm text-gray-500 italic">Faça o upload da planilha para carregar as microáreas...</span>
+                <span class="text-sm text-gray-400 dark:text-zinc-500 font-medium italic">Faça o upload da planilha para carregar as microáreas...</span>
             </div>
         </div>
 
         <!-- KPI Cards (6 Indicadores) -->
         <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 md:gap-4 mb-8">
-            <div class="card border-l-4 border-cyan-500 flex flex-col justify-between cursor-pointer hover:bg-cyan-50 p-4" onclick="abrirModalFiltro('TODOS', 'total')">
+            <div class="card border-l-4 border-cyan-500 dark:border-cyan-600 flex flex-col justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('TODOS', 'total')">
                 <div>
-                    <p class="text-[10px] md:text-xs text-gray-500 font-semibold mb-1 uppercase">Total Pacientes</p>
-                    <h2 id="kpi-total" class="text-xl md:text-2xl font-bold text-gray-800">0</h2>
+                    <p class="text-[10px] md:text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Total Pacientes</p>
+                    <h2 id="kpi-total" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</h2>
                 </div>
-                <div class="mt-2 text-cyan-600 text-right"><i class="fas fa-users"></i></div>
+                <div class="mt-2 text-cyan-600 dark:text-cyan-400 text-right"><i class="fas fa-users"></i></div>
             </div>
             
-            <div class="card border-l-4 border-blue-500 flex flex-col justify-between cursor-pointer hover:bg-blue-50 p-4" onclick="abrirModalFiltro('Realizado', 'primeiraconsulta')">
+            <div class="card border-l-4 border-blue-500 dark:border-blue-500 flex flex-col justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('Realizado', 'primeiraconsulta')">
                 <div>
-                    <p class="text-[10px] md:text-xs text-gray-500 font-semibold mb-1 uppercase">Primeira Consulta</p>
-                    <h2 id="kpi-primeiraconsulta" class="text-xl md:text-2xl font-bold text-gray-800">0</h2>
+                    <p class="text-[10px] md:text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Primeira Consulta</p>
+                    <h2 id="kpi-primeiraconsulta" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</h2>
                 </div>
-                <div class="mt-2 text-blue-500 text-right"><i class="fas fa-user-plus"></i></div>
+                <div class="mt-2 text-blue-500 dark:text-blue-400 text-right"><i class="fas fa-user-plus"></i></div>
             </div>
 
-            <div class="card border-l-4 border-emerald-500 flex flex-col justify-between cursor-pointer hover:bg-emerald-50 p-4" onclick="abrirModalFiltro('Realizado', 'tratamentoconcluido')">
+            <div class="card border-l-4 border-emerald-500 dark:border-emerald-500 flex flex-col justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('Realizado', 'tratamentoconcluido')">
                 <div>
-                    <p class="text-[10px] md:text-xs text-gray-500 font-semibold mb-1 uppercase">Trat. Concluído</p>
-                    <h2 id="kpi-tratamentoconcluido" class="text-xl md:text-2xl font-bold text-gray-800">0</h2>
+                    <p class="text-[10px] md:text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Trat. Concluído</p>
+                    <h2 id="kpi-tratamentoconcluido" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</h2>
                 </div>
-                <div class="mt-2 text-emerald-500 text-right"><i class="fas fa-check-circle"></i></div>
+                <div class="mt-2 text-emerald-500 dark:text-emerald-400 text-right"><i class="fas fa-check-circle"></i></div>
             </div>
 
-            <div class="card border-l-4 border-teal-500 flex flex-col justify-between cursor-pointer hover:bg-teal-50 p-4" onclick="abrirModalFiltro('Realizado', 'art')">
+            <div class="card border-l-4 border-teal-500 dark:border-teal-500 flex flex-col justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('Realizado', 'art')">
                 <div>
-                    <p class="text-[10px] md:text-xs text-gray-500 font-semibold mb-1 uppercase">Atraumático (ART)</p>
-                    <h2 id="kpi-art" class="text-xl md:text-2xl font-bold text-gray-800">0</h2>
+                    <p class="text-[10px] md:text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Atraumático (ART)</p>
+                    <h2 id="kpi-art" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</h2>
                 </div>
-                <div class="mt-2 text-teal-500 text-right"><i class="fas fa-band-aid"></i></div>
+                <div class="mt-2 text-teal-500 dark:text-teal-400 text-right"><i class="fas fa-band-aid"></i></div>
             </div>
 
-            <div class="card border-l-4 border-amber-500 flex flex-col justify-between cursor-pointer hover:bg-amber-50 p-4" onclick="abrirModalFiltro('Realizado', 'escovacao')">
+            <div class="card border-l-4 border-amber-500 dark:border-amber-500 flex flex-col justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('Realizado', 'escovacao')">
                 <div>
-                    <p class="text-[10px] md:text-xs text-gray-500 font-semibold mb-1 uppercase">Escovação Coletiva</p>
-                    <h2 id="kpi-escovacao" class="text-xl md:text-2xl font-bold text-gray-800">0</h2>
+                    <p class="text-[10px] md:text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Escovação Coletiva</p>
+                    <h2 id="kpi-escovacao" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</h2>
                 </div>
-                <div class="mt-2 text-amber-500 text-right"><i class="fas fa-hands-wash"></i></div>
+                <div class="mt-2 text-amber-500 dark:text-amber-400 text-right"><i class="fas fa-hands-wash"></i></div>
             </div>
 
-            <div class="card border-l-4 border-rose-500 flex flex-col justify-between cursor-pointer hover:bg-rose-50 p-4" onclick="abrirModalFiltro('Realizado', 'exodontia')">
+            <div class="card border-l-4 border-rose-500 dark:border-rose-500 flex flex-col justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/50 p-4" onclick="abrirModalFiltro('Realizado', 'exodontia')">
                 <div>
-                    <p class="text-[10px] md:text-xs text-gray-500 font-semibold mb-1 uppercase">Exodontias (Perm.)</p>
-                    <h2 id="kpi-exodontia" class="text-xl md:text-2xl font-bold text-gray-800">0</h2>
+                    <p class="text-[10px] md:text-xs text-gray-500 dark:text-zinc-400 font-semibold mb-1 uppercase">Exodontias (Perm.)</p>
+                    <h2 id="kpi-exodontia" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</h2>
                 </div>
-                <div class="mt-2 text-rose-500 text-right"><i class="fas fa-stethoscope"></i></div>
+                <div class="mt-2 text-rose-500 dark:text-rose-400 text-right"><i class="fas fa-stethoscope"></i></div>
             </div>
         </div>
 
-        <p class="text-sm text-gray-500 mb-4 ml-1">Dica: <b>Clique nas fatias ou barras de qualquer gráfico</b> para abrir a lista de pacientes correspondentes.</p>
+        <p class="text-sm text-gray-600 dark:text-zinc-300 mb-6 bg-white dark:bg-zinc-900 p-3 rounded-lg border border-gray-200 dark:border-zinc-800 font-medium shadow-sm transition-colors duration-300"><i class="fas fa-info-circle text-cyan-500 dark:text-cyan-400 mr-2"></i><b>Dica:</b> Clique em qualquer bloco de KPI acima ou painel abaixo para ver a lista de pacientes correspondentes.</p>
         
         <!-- Bloco 1: Consultas e Conclusão -->
-        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><i class="fas fa-clipboard-list mr-2 text-cyan-600"></i> Produção Clínica e Conclusão</h3>
+        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center"><i class="fas fa-clipboard-list mr-2 text-cyan-600 dark:text-cyan-400"></i> Produção Clínica e Conclusão</h3>
         
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Primeira Consulta Odontológica</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="primeiraConsultaChart"></canvas>
+            <div class="card flex flex-col justify-between">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-4 text-center text-sm md:text-base">Primeira Consulta Odontológica</h4>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Realizado', 'primeiraconsulta')">
+                        <p class="text-xs uppercase text-cyan-700 dark:text-cyan-400 font-bold leading-tight mb-1">Realizado</p>
+                        <p id="val-pc-realizado" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Pendente', 'primeiraconsulta')">
+                        <p class="text-xs uppercase text-gray-500 dark:text-zinc-400 font-bold leading-tight mb-1">Pendente</p>
+                        <p id="val-pc-pendente" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
                 </div>
             </div>
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Tratamento Odontológico Concluído</h3>
-                <div class="relative h-72 w-full pb-4">
-                    <canvas id="tratamentoConcluidoChart"></canvas>
+            <div class="card flex flex-col justify-between">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-4 text-center text-sm md:text-base">Tratamento Odontológico Concluído</h4>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Realizado', 'tratamentoconcluido')">
+                        <p class="text-xs uppercase text-emerald-700 dark:text-emerald-400 font-bold leading-tight mb-1">Realizado</p>
+                        <p id="val-tc-realizado" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Pendente', 'tratamentoconcluido')">
+                        <p class="text-xs uppercase text-gray-500 dark:text-zinc-400 font-bold leading-tight mb-1">Pendente</p>
+                        <p id="val-tc-pendente" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Bloco 2: Procedimentos Específicos -->
-        <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center mt-10"><i class="fas fa-tools mr-2 text-cyan-600"></i> Procedimentos, Cirurgias e Prevenção</h3>
+        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center mt-10"><i class="fas fa-tools mr-2 text-cyan-600 dark:text-cyan-400"></i> Procedimentos, Cirurgias e Prevenção</h3>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Tratamento Restaurador Atraumático (ART)</h3>
-                <div class="relative h-64 w-full pb-4">
-                    <canvas id="artChart"></canvas>
+            <div class="card flex flex-col justify-between">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-4 text-center text-sm">Tratamento Restaurador Atraumático (ART)</h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[75px]" onclick="abrirModalFiltro('Realizado', 'art')">
+                        <p class="text-[10px] uppercase text-teal-700 dark:text-teal-400 font-bold leading-tight mb-1">Realizado</p>
+                        <p id="val-art-realizado" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[75px]" onclick="abrirModalFiltro('Pendente', 'art')">
+                        <p class="text-[10px] uppercase text-gray-500 dark:text-zinc-400 font-bold leading-tight mb-1">Pendente</p>
+                        <p id="val-art-pendente" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
                 </div>
             </div>
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Escovação Supervisionada (Coletiva)</h3>
-                <div class="relative h-64 w-full pb-4">
-                    <canvas id="escovacaoChart"></canvas>
+            <div class="card flex flex-col justify-between">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-4 text-center text-sm">Escovação Supervisionada (Coletiva)</h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[75px]" onclick="abrirModalFiltro('Realizado', 'escovacao')">
+                        <p class="text-[10px] uppercase text-amber-700 dark:text-amber-400 font-bold leading-tight mb-1">Realizado</p>
+                        <p id="val-esc-realizado" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[75px]" onclick="abrirModalFiltro('Pendente', 'escovacao')">
+                        <p class="text-[10px] uppercase text-gray-500 dark:text-zinc-400 font-bold leading-tight mb-1">Pendente</p>
+                        <p id="val-esc-pendente" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
                 </div>
             </div>
-            <div class="card">
-                <h3 class="text-md font-bold text-gray-700 mb-4 text-center">Exodontias (Dentes Permanentes) & Preventivos</h3>
-                <div class="relative h-64 w-full pb-4">
-                    <canvas id="exodontiaChart"></canvas>
+            <div class="card flex flex-col justify-between">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-4 text-center text-sm">Exodontias (Permanentes) & Preventivos</h4>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[75px]" onclick="abrirModalFiltro('Realizado', 'exodontia')">
+                        <p class="text-[10px] uppercase text-rose-700 dark:text-rose-400 font-bold leading-tight mb-1">Exodontia</p>
+                        <p id="val-exo-realizado" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[75px]" onclick="abrirModalFiltro('Realizado', 'preventivo')">
+                        <p class="text-[10px] uppercase text-indigo-700 dark:text-indigo-400 font-bold leading-tight mb-1">Preventivo</p>
+                        <p id="val-prev-realizado" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -212,54 +295,54 @@
 <!-- ============================================== -->
 <!-- MODAL: LISTA DE PACIENTES -->
 <!-- ============================================== -->
-<div id="pacientesModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col overflow-hidden">
+<div id="pacientesModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-zinc-800">
         
-        <div class="p-5 border-b border-gray-200 bg-cyan-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-20">
+        <div class="p-5 border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-black flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-20">
             <div>
-                <h2 class="text-2xl font-bold text-cyan-900" id="modalTitle">Atendimento Odontológico</h2>
-                <p class="text-sm text-gray-600 mt-1" id="modalSubtitle">Carregando...</p>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white" id="modalTitle">Atendimento Odontológico</h2>
+                <p class="text-sm text-gray-500 dark:text-zinc-400 mt-1 font-medium" id="modalSubtitle">Carregando...</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-3 w-full md:w-auto" id="controlesModal">
-                <label for="sortTabela" class="text-sm font-medium text-gray-700 whitespace-nowrap"><i class="fas fa-sort-amount-down-alt mr-1"></i> Ordenar:</label>
-                <select id="sortTabela" onchange="ordenarTabelaModal()" class="text-sm border border-gray-300 rounded-md shadow-sm focus:ring-cyan-500 focus:border-cyan-500 p-2 bg-white">
+                <label for="sortTabela" class="text-sm font-bold text-gray-700 dark:text-zinc-300 whitespace-nowrap"><i class="fas fa-sort-amount-down-alt mr-1"></i> Ordenar:</label>
+                <select id="sortTabela" onchange="ordenarTabelaModal()" class="text-sm border border-gray-300 dark:border-zinc-700 rounded-md shadow-sm focus:ring-cyan-500 p-2 bg-white dark:bg-zinc-800 text-gray-800 dark:text-gray-200 font-medium outline-none">
                     <option value="default">Por Nome (A-Z)</option>
                 </select>
 
-                <button onclick="fecharModal()" class="text-gray-500 hover:text-red-500 transition focus:outline-none ml-2">
-                    <i class="fas fa-times fa-xl"></i>
+                <button onclick="fecharModal()" class="text-gray-500 dark:text-zinc-400 hover:text-red-600 dark:hover:text-red-400 transition focus:outline-none ml-2 bg-gray-200 dark:bg-zinc-800 hover:bg-red-100 dark:hover:bg-red-950/50 rounded-full w-8 h-8 flex items-center justify-center">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         </div>
         
-        <div class="p-0 flex-1 overflow-auto bg-white relative z-10">
-            <div id="modalEmptyState" class="hidden p-10 text-center text-gray-500">
-                <i class="fas fa-file-csv fa-3x mb-4 text-gray-300"></i>
-                <p class="text-lg">Faça o upload da sua planilha primeiro.</p>
+        <div class="p-0 flex-1 overflow-auto bg-white dark:bg-zinc-900 relative z-10">
+            <div id="modalEmptyState" class="hidden p-10 text-center text-gray-500 dark:text-zinc-500">
+                <i class="fas fa-file-csv fa-3x mb-4 text-gray-300 dark:text-zinc-800"></i>
+                <p class="text-lg font-medium">Faça o upload da sua planilha primeiro.</p>
             </div>
             
             <table id="modalTable" class="w-full text-left border-collapse min-w-[900px]">
-                <thead class="bg-cyan-100 text-cyan-900 sticky top-0 z-10 shadow-sm text-xs uppercase font-bold tracking-wider">
+                <thead class="bg-gray-100 dark:bg-black text-gray-700 dark:text-zinc-300 sticky top-0 z-10 shadow-sm text-xs uppercase font-bold tracking-wider">
                     <tr>
-                        <th class="p-4 border-b">Nome / Idade</th>
-                        <th class="p-4 border-b text-center">1ª Consulta</th>
-                        <th class="p-4 border-b text-center">Trat. Concluído</th>
-                        <th class="p-4 border-b text-center">ART</th>
-                        <th class="p-4 border-b text-center">Escovação Coletiva</th>
-                        <th class="p-4 border-b text-center">Exodontia Permanente</th>
-                        <th class="p-4 border-b text-center">Proc. Preventivos</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800">Nome / Idade</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">1ª Consulta</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">Trat. Concluído</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">ART</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">Escovação Coletiva</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">Exodontia Permanente</th>
+                        <th class="p-4 border-b border-gray-200 dark:border-zinc-800 text-center">Proc. Preventivos</th>
                     </tr>
                 </thead>
-                <tbody id="modalTableBody" class="text-sm text-gray-700 divide-y divide-gray-100"></tbody>
+                <tbody id="modalTableBody" class="text-sm text-gray-800 dark:text-gray-200 divide-y divide-gray-100 dark:divide-zinc-800 font-medium"></tbody>
             </table>
         </div>
         
-        <div class="p-4 border-t border-gray-200 bg-gray-50 flex justify-end items-center gap-3 z-20">
-            <button id="btnImprimirLista" onclick="imprimirLista()" class="hidden bg-cyan-600 text-white px-5 py-2.5 rounded-lg hover:bg-cyan-700 transition font-medium flex items-center shadow-sm">
-                <i class="fas fa-print mr-2"></i> Imprimir Lista
+        <div class="p-4 border-t border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-black flex justify-end items-center gap-3 z-20">
+            <button id="btnImprimirLista" onclick="imprimirLista()" class="hidden bg-gray-800 dark:bg-cyan-700 text-white px-5 py-2.5 rounded-lg hover:bg-gray-900 dark:hover:bg-cyan-800 transition font-bold flex items-center shadow-sm">
+                <i class="fas fa-print mr-2"></i> Relatório Completo (Imprimir)
             </button>
-            <button onclick="fecharModal()" class="bg-gray-200 text-gray-800 px-6 py-2.5 rounded-lg hover:bg-gray-300 transition font-medium">
+            <button onclick="fecharModal()" class="bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 text-gray-700 dark:text-gray-200 px-6 py-2.5 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition font-bold shadow-sm">
                 Fechar
             </button>
         </div>
@@ -267,17 +350,39 @@
 </div>
 
 <script>
+    // === Lógica do Tema Escuro ===
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+
+    if (document.documentElement.classList.contains('dark')) {
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+    }
+
+    themeToggleBtn.addEventListener('click', function() {
+        document.documentElement.classList.toggle('dark');
+        if (document.documentElement.classList.contains('dark')) {
+            localStorage.setItem('theme', 'dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        } else {
+            localStorage.setItem('theme', 'light');
+            themeIcon.classList.replace('fa-sun', 'fa-moon');
+        }
+    });
+
+    // === MENU MOBILE ===
+    function abrirMenuMobile() {
+        document.getElementById('sidebar').classList.remove('-translate-x-full');
+        document.getElementById('sidebarOverlay').classList.remove('hidden');
+    }
+    function fecharMenuMobile() {
+        document.getElementById('sidebar').classList.add('-translate-x-full');
+        document.getElementById('sidebarOverlay').classList.add('hidden');
+    }
+
     let dadosBrutos = []; 
     let microareaSelecionada = 'TODAS'; 
     let resultadosBusca = []; 
     let pacientesAtuaisModal = [];
-    let charts = {};
-
-    const defaultOptions = { 
-        responsive: true, maintainAspectRatio: false, 
-        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } }, 
-        animation: { duration: 600 } 
-    };
 
     function getFiltrados() {
         if (microareaSelecionada === 'TODAS') return dadosBrutos;
@@ -307,40 +412,21 @@
         return false;
     }
 
-    function buildChart(id, type, data, filterName, isDoughnut = false) {
-        let opt = { ...defaultOptions };
-        if (isDoughnut) opt.cutout = '65%';
-        opt.onHover = (e, el) => { e.native.target.style.cursor = el[0] ? 'pointer' : 'default'; };
-        opt.onClick = (e, el, chart) => {
-            if (el.length > 0) abrirModalFiltro(chart.data.labels[el[0].index], filterName);
-        };
-        return new Chart(document.getElementById(id), { type: type, data: data, options: opt });
-    }
-
-    function initCharts() {
-        charts.primeiraConsultaChart = buildChart('primeiraConsultaChart', 'doughnut', {
-            labels: ['Realizado', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#0ea5e9', '#e2e8f0'], borderWidth: 2 }]
-        }, 'primeiraconsulta', true);
-
-        charts.tratamentoConcluidoChart = buildChart('tratamentoConcluidoChart', 'doughnut', {
-            labels: ['Realizado', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#10b981', '#e2e8f0'], borderWidth: 2 }]
-        }, 'tratamentoconcluido', true);
-
-        charts.artChart = buildChart('artChart', 'pie', {
-            labels: ['Realizado', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#14b8a6', '#e2e8f0'], borderWidth: 2 }]
-        }, 'art');
-
-        charts.escovacaoChart = buildChart('escovacaoChart', 'pie', {
-            labels: ['Realizado', 'Pendente'], datasets: [{ data: [0,0], backgroundColor: ['#f59e0b', '#e2e8f0'], borderWidth: 2 }]
-        }, 'escovacao');
-
-        charts.exodontiaChart = buildChart('exodontiaChart', 'bar', {
-            labels: ['Exodontia Perm.', 'Preventivos'],
-            datasets: [{ label: 'Qtd', data: [0,0], backgroundColor: ['#f43f5e', '#6366f1'], borderRadius: 4 }]
-        }, 'exodontia');
-    }
-
-    initCharts();
+    // === GERENCIAMENTO DE LOCALSTORAGE ===
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedData = localStorage.getItem('odonto_csv_data');
+        if (savedData) {
+            try {
+                dadosBrutos = JSON.parse(savedData);
+                if (dadosBrutos.length > 0) {
+                    gerarBotoesMicroarea();
+                    processAndUpdateDashboard();
+                }
+            } catch (err) {
+                console.error("Erro ao carregar dados do LocalStorage", err);
+            }
+        }
+    });
 
     // === PROCESSAMENTO DE PLANILHAS ===
     document.getElementById('csvFileInput').addEventListener('change', e => {
@@ -350,18 +436,33 @@
 
         if(nomeArquivo.endsWith('.xlsx') || nomeArquivo.endsWith('.xls')){
             reader.onload = ev => {
-                const data = new Uint8Array(ev.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const jsonResult = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
-                processarDados(jsonResult);
+                try {
+                    const data = new Uint8Array(ev.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const jsonResult = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
+                    processarDados(jsonResult);
+                } catch (err) {
+                    console.error(err);
+                    alert('Erro ao ler Excel: ' + err.message);
+                } finally {
+                    e.target.value = '';
+                }
             };
             reader.readAsArrayBuffer(file);
         } else {
             reader.onload = ev => {
-                Papa.parse(ev.target.result, {
-                    header: true, skipEmptyLines: true, encoding: "ISO-8859-1",
-                    complete: results => processarDados(results.data)
-                });
+                try {
+                    Papa.parse(ev.target.result, {
+                        header: true, skipEmptyLines: true, encoding: "ISO-8859-1",
+                        complete: results => processarDados(results.data),
+                        error: err => alert('Erro ao ler CSV: ' + err.message)
+                    });
+                } catch (err) {
+                    console.error(err);
+                    alert('Erro ao ler CSV: ' + err.message);
+                } finally {
+                    e.target.value = '';
+                }
             };
             reader.readAsText(file, 'ISO-8859-1');
         }
@@ -370,19 +471,20 @@
     function processarDados(dataArray) {
         if(!dataArray.length) return alert('Planilha vazia!');
         dadosBrutos = dataArray;
+        
+        try {
+            localStorage.setItem('odonto_csv_data', JSON.stringify(dadosBrutos));
+        } catch (err) {
+            console.warn("Arquivo muito grande para o LocalStorage.", err);
+        }
+
         microareaSelecionada = 'TODAS'; 
         gerarBotoesMicroarea(); 
         processAndUpdateDashboard(); 
     }
 
-    function limparDadosLocais() {
-        if (confirm("Deseja apagar os dados carregados?")) {
-            dadosBrutos = [];
-            document.getElementById('csvFileInput').value = '';
-            processAndUpdateDashboard();
-            document.getElementById('microareaButtonsContainer').innerHTML = '<span class="text-sm text-gray-500 italic">Planilha limpa...</span>';
-        }
-    }
+    const activeClasses = ['bg-gray-800', 'dark:bg-cyan-700', 'text-white', 'border-transparent'];
+    const inactiveClasses = ['bg-white', 'dark:bg-zinc-800', 'text-gray-700', 'dark:text-zinc-300', 'border-gray-300', 'dark:border-zinc-700', 'hover:bg-gray-100', 'dark:hover:bg-zinc-700'];
 
     function gerarBotoesMicroarea() {
         const set = new Set();
@@ -392,7 +494,7 @@
         
         const btnTodas = document.createElement('button');
         btnTodas.id = 'btn-ma-TODAS';
-        btnTodas.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-cyan-700 text-white shadow-sm';
+        btnTodas.className = `ma-btn px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm border ${activeClasses.join(' ')}`;
         btnTodas.innerHTML = '<i class="fas fa-globe mr-1"></i> Todas (Geral)';
         btnTodas.onclick = () => filtrarPorMicroarea('TODAS');
         container.appendChild(btnTodas);
@@ -400,8 +502,8 @@
         [...set].sort((a,b) => a.localeCompare(b, undefined, {numeric: true})).forEach(ma => {
             const btn = document.createElement('button');
             btn.id = 'btn-ma-' + ma.replace(/\W/g, '_');
-            btn.className = 'ma-btn px-4 py-2 rounded-lg text-sm font-semibold transition bg-white text-cyan-800 border border-cyan-200 hover:bg-cyan-50 shadow-sm';
-            btn.innerHTML = `<i class="fas fa-map-marker-alt text-cyan-400 mr-1"></i> Microárea ${ma}`;
+            btn.className = `ma-btn px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm border ${inactiveClasses.join(' ')}`;
+            btn.innerHTML = `<i class="fas fa-map-marker-alt text-gray-400 mr-1"></i> Microárea ${ma}`;
             btn.onclick = () => filtrarPorMicroarea(ma);
             container.appendChild(btn);
         });
@@ -410,11 +512,13 @@
     function filtrarPorMicroarea(ma) {
         microareaSelecionada = ma;
         document.querySelectorAll('.ma-btn').forEach(b => {
-            b.classList.remove('bg-cyan-700', 'text-white'); b.classList.add('bg-white', 'text-cyan-800', 'border-cyan-200');
+            b.classList.remove(...activeClasses);
+            b.classList.add(...inactiveClasses);
         });
         const activeBtn = document.getElementById('btn-ma-' + ma.replace(/\W/g, '_'));
         if (activeBtn) {
-            activeBtn.classList.remove('bg-white', 'text-cyan-800', 'border-cyan-200'); activeBtn.classList.add('bg-cyan-700', 'text-white');
+            activeBtn.classList.remove(...inactiveClasses);
+            activeBtn.classList.add(...activeClasses);
         }
         processAndUpdateDashboard();
     }
@@ -447,11 +551,20 @@
         document.getElementById('kpi-escovacao').innerText = esc[0].toLocaleString('pt-BR');
         document.getElementById('kpi-exodontia').innerText = exo[0].toLocaleString('pt-BR');
 
-        charts.primeiraConsultaChart.data.datasets[0].data = pc; charts.primeiraConsultaChart.update();
-        charts.tratamentoConcluidoChart.data.datasets[0].data = tc; charts.tratamentoConcluidoChart.update();
-        charts.artChart.data.datasets[0].data = art; charts.artChart.update();
-        charts.escovacaoChart.data.datasets[0].data = esc; charts.escovacaoChart.update();
-        charts.exodontiaChart.data.datasets[0].data = [exo[0], prev[0]]; charts.exodontiaChart.update();
+        document.getElementById('val-pc-realizado').innerText = pc[0].toLocaleString('pt-BR');
+        document.getElementById('val-pc-pendente').innerText = pc[1].toLocaleString('pt-BR');
+
+        document.getElementById('val-tc-realizado').innerText = tc[0].toLocaleString('pt-BR');
+        document.getElementById('val-tc-pendente').innerText = tc[1].toLocaleString('pt-BR');
+
+        document.getElementById('val-art-realizado').innerText = art[0].toLocaleString('pt-BR');
+        document.getElementById('val-art-pendente').innerText = art[1].toLocaleString('pt-BR');
+
+        document.getElementById('val-esc-realizado').innerText = esc[0].toLocaleString('pt-BR');
+        document.getElementById('val-esc-pendente').innerText = esc[1].toLocaleString('pt-BR');
+
+        document.getElementById('val-exo-realizado').innerText = exo[0].toLocaleString('pt-BR');
+        document.getElementById('val-prev-realizado').innerText = prev[0].toLocaleString('pt-BR');
     }
 
     // === BUSCA E MODAL ===
@@ -462,12 +575,18 @@
         resultadosBusca = getFiltrados().filter(r => String(r['Nome'] || '').toLowerCase().includes(q)).slice(0, 20);
         box.classList.remove('hidden');
         if (resultadosBusca.length > 0) {
-            box.innerHTML = `<div class="text-xs text-gray-500 mb-2">${resultadosBusca.length} resultado(s)</div>
+            box.innerHTML = `<div class="text-xs text-gray-500 dark:text-zinc-400 mb-2 font-bold">${resultadosBusca.length} resultado(s)</div>
                 <div class="flex flex-wrap gap-2">
-                    ${resultadosBusca.map((r, i) => `<button onclick="abrirModalComFiltro([resultadosBusca[${i}]], 'Paciente:${r['Nome']}')" class="px-3 py-2 bg-white border border-cyan-200 rounded-lg text-sm text-cyan-700 shadow-sm">${r['Nome'] || 'Sem nome'}</button>`).join('')}
+                    ${resultadosBusca.map((r, i) => `<button data-busca-idx="${i}" class="busca-resultado-btn px-3 py-2 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-700 transition shadow-sm">${r['Nome'] || 'Sem nome'}</button>`).join('')}
                 </div>`;
+            box.querySelectorAll('.busca-resultado-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const i = parseInt(btn.dataset.buscaIdx, 10);
+                    abrirModalComFiltro([resultadosBusca[i]], `Paciente: ${resultadosBusca[i]['Nome']}`);
+                });
+            });
         } else {
-            box.innerHTML = '<div class="text-sm text-gray-500">Nenhum paciente encontrado.</div>';
+            box.innerHTML = '<div class="text-sm text-gray-500 dark:text-zinc-400 font-medium">Nenhum paciente encontrado.</div>';
         }
     }
     function abrirResultadosBusca() {
@@ -480,6 +599,9 @@
         let filtrados = [];
         
         if (tipo === 'total') filtrados = base;
+        else if (tipo === 'preventivo') {
+            filtrados = base.filter(r => checkRealizado(r, ['Preventivo', 'Procedimentos preventivos']));
+        }
         else {
             let chaves = [];
             if (tipo === 'primeiraconsulta') chaves = ['Primeira consulta', '1ª consulta'];
@@ -499,6 +621,7 @@
     function abrirModalComFiltro(dados, titulo) {
         pacientesAtuaisModal = dados;
         document.getElementById('modalTitle').innerText = titulo;
+        document.getElementById('sortTabela').value = 'default';
         document.getElementById('modalEmptyState').classList.add('hidden');
         document.getElementById('modalTable').classList.remove('hidden');
         document.getElementById('btnImprimirLista').classList.remove('hidden');
@@ -509,8 +632,8 @@
 
     function renderStatus(booleano) {
         return booleano 
-            ? '<span class="px-2 py-1 bg-emerald-100 text-emerald-700 font-bold rounded-full text-xs">Sim</span>'
-            : '<span class="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs">Não</span>';
+            ? '<span class="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-400 font-bold rounded-full text-xs border border-emerald-200 dark:border-emerald-900/50">Sim</span>'
+            : '<span class="px-2.5 py-1 bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-400 font-bold rounded-full text-xs border border-red-200 dark:border-red-900/50">Não</span>';
     }
 
     function ordenarTabelaModal() {
@@ -527,8 +650,8 @@
             let prev = checkRealizado(p, ['Preventivo', 'Procedimentos preventivos']);
             
             return `
-                <tr class="border-b border-gray-100 hover:bg-cyan-50 transition">
-                    <td class="p-4 font-medium text-gray-900">${p['Nome'] || '-'} <br><span class="text-xs text-gray-500">${p['Idade']||''}</span></td>
+                <tr class="border-b border-gray-100 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition">
+                    <td class="p-4 font-bold text-gray-900 dark:text-gray-100">${p['Nome'] || '-'} <br><span class="text-xs text-gray-500 dark:text-zinc-400 font-medium">${p['Idade']||''}</span></td>
                     <td class="p-4 text-center">${renderStatus(pc)}</td>
                     <td class="p-4 text-center">${renderStatus(tc)}</td>
                     <td class="p-4 text-center">${renderStatus(art)}</td>
@@ -548,9 +671,11 @@
         const janela = window.open('', '_blank', 'width=1000,height=700');
         janela.document.write(`
             <html><head><title>Relatório - ${titulo}</title><style>
-            body{font-family:sans-serif;padding:20px;} h1{color:#164e63;} 
+            body{font-family:sans-serif;padding:20px; color: #1f2937;} 
+            h1{color:#164e63; font-size:22px; margin-bottom:5px;} 
             table{width:100%;border-collapse:collapse;margin-top:20px;font-size:12px;}
-            th,td{border:1px solid #ddd;padding:8px;text-align:center;} th{background:#ecfeff;color:#164e63;}
+            th,td{border:1px solid #ddd;padding:8px;text-align:center; color: #374151;} 
+            th{background:#ecfeff;color:#164e63; font-weight:bold;}
             </style></head><body><h1>${titulo}</h1>${tabela}</body></html>
         `);
         janela.document.close(); janela.focus(); setTimeout(() => { janela.print(); janela.close(); }, 500);
