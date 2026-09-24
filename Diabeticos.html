@@ -31,15 +31,15 @@
         body { font-family: 'Inter', sans-serif; }
         body { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
         
-        .card { border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 20px; transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, border-color 0.3s; }
+        .card { border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 18px; transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s, border-color 0.3s; }
         
         /* Tema Claro: Cartões */
         .card { background: white; border: 1px solid #e2e8f0; }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.05); border-color: #cbd5e1; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 8px 12px rgba(0,0,0,0.04); border-color: #cbd5e1; }
         
         /* Tema Escuro: Cartões (Preto Neutro) */
         .dark .card { background: #121212; border-color: #27272a; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5); }
-        .dark .card:hover { border-color: #3f3f46; box-shadow: 0 10px 15px rgba(0,0,0,0.6); }
+        .dark .card:hover { border-color: #3f3f46; box-shadow: 0 8px 12px rgba(0,0,0,0.6); }
 
         .file-upload-wrapper { position: relative; overflow: hidden; display: inline-block; }
         .file-upload-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
@@ -206,43 +206,43 @@
             </div>
         </div>
 
-        <p class="text-sm text-gray-600 dark:text-zinc-300 mb-6 bg-white dark:bg-zinc-900 p-3 rounded-lg border border-gray-200 dark:border-zinc-800 font-medium shadow-sm transition-colors duration-300"><i class="fas fa-info-circle text-blue-500 dark:text-blue-400 mr-2"><b>Dica:</b> Clique em qualquer bloco de KPI acima ou painel abaixo para ver a lista de pacientes correspondentes.</p>
+        <p class="text-sm text-gray-600 dark:text-zinc-300 mb-6 bg-white dark:bg-zinc-900 p-3 rounded-lg border border-gray-200 dark:border-zinc-800 font-medium shadow-sm transition-colors duration-300"><i class="fas fa-info-circle text-blue-500 dark:text-blue-400 mr-2"></i><b>Dica:</b> Clique em qualquer bloco de KPI acima ou painel abaixo para ver a lista de pacientes correspondentes.</p>
         
         <!-- Bloco 1: Acompanhamento de Rotina -->
         <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center"><i class="fas fa-calendar-check mr-2 text-blue-600 dark:text-blue-400"></i> Acompanhamento Geral (Prazos)</h3>
         
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="card">
-                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">Consulta (Data da Última Consulta)</h4>
-                <div class="grid grid-cols-3 gap-3">
-                    <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Em dia (< 180 dias)', 'consulta')">
-                        <p class="text-[10px] uppercase text-emerald-700 dark:text-emerald-400 font-bold">Em dia (< 180d)</p>
-                        <p id="val-cons-emdia" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+            <div class="card flex flex-col justify-between">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-4 text-center text-sm md:text-base">Consulta (Data da Última Consulta)</h4>
+                <div class="grid grid-cols-3 gap-2 md:gap-3">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Em dia (< 180 dias)', 'consulta')">
+                        <p class="text-[10px] uppercase text-emerald-700 dark:text-emerald-400 font-bold leading-tight mb-1">Em dia (&lt; 180d)</p>
+                        <p id="val-cons-emdia" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</p>
                     </div>
-                    <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Pendente (>= 180 dias ou s/ reg.)', 'consulta')">
-                        <p class="text-[10px] uppercase text-amber-700 dark:text-amber-400 font-bold">Pendente (>= 180d)</p>
-                        <p id="val-cons-pendente" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Pendente (>= 180 dias ou s/ reg.)', 'consulta')">
+                        <p class="text-[10px] uppercase text-amber-700 dark:text-amber-400 font-bold leading-tight mb-1">Pendente (&ge; 180d)</p>
+                        <p id="val-cons-pendente" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</p>
                     </div>
-                    <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Sem Registro', 'consulta')">
-                        <p class="text-[10px] uppercase text-gray-500 dark:text-zinc-400 font-bold">Sem Reg.</p>
-                        <p id="val-cons-semreg" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Sem Registro', 'consulta')">
+                        <p class="text-[10px] uppercase text-gray-500 dark:text-zinc-400 font-bold leading-tight mb-1">Sem Reg.</p>
+                        <p id="val-cons-semreg" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</p>
                     </div>
                 </div>
             </div>
-            <div class="card">
-                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">Visita Domiciliar (ACS)</h4>
-                <div class="grid grid-cols-3 gap-3">
-                    <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Em dia (<= 30 dias)', 'visita')">
-                        <p class="text-[10px] uppercase text-blue-700 dark:text-blue-400 font-bold">Em dia (<= 30d)</p>
-                        <p id="val-vis-emdia" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+            <div class="card flex flex-col justify-between">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-4 text-center text-sm md:text-base">Visita Domiciliar (ACS)</h4>
+                <div class="grid grid-cols-3 gap-2 md:gap-3">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Em dia (<= 30 dias)', 'visita')">
+                        <p class="text-[10px] uppercase text-blue-700 dark:text-blue-400 font-bold leading-tight mb-1">Em dia (&le; 30d)</p>
+                        <p id="val-vis-emdia" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</p>
                     </div>
-                    <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Atrasada', 'visita')">
-                        <p class="text-[10px] uppercase text-red-700 dark:text-red-400 font-bold">Atrasada</p>
-                        <p id="val-vis-atrasada" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Atrasada', 'visita')">
+                        <p class="text-[10px] uppercase text-red-700 dark:text-red-400 font-bold leading-tight mb-1">Atrasada</p>
+                        <p id="val-vis-atrasada" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</p>
                     </div>
-                    <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Sem Registro', 'visita')">
-                        <p class="text-[10px] uppercase text-gray-500 dark:text-zinc-400 font-bold">Sem Reg.</p>
-                        <p id="val-vis-semreg" class="text-2xl font-bold text-gray-900 dark:text-white">0</p>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-3 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Sem Registro', 'visita')">
+                        <p class="text-[10px] uppercase text-gray-500 dark:text-zinc-400 font-bold leading-tight mb-1">Sem Reg.</p>
+                        <p id="val-vis-semreg" class="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">0</p>
                     </div>
                 </div>
             </div>
@@ -251,29 +251,29 @@
         <!-- Bloco 2: Exames e Prevenção -->
         <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center mt-10"><i class="fas fa-notes-medical mr-2 text-blue-600 dark:text-blue-400"></i> Marcadores e Prevenção</h3>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="card">
-                 <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">Hemoglobina Glicada (HbA1c)</h4>
-                 <div class="grid grid-cols-2 gap-4">
-                     <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Em dia (<= 1 ano)', 'hb')">
-                         <p class="text-xs uppercase text-purple-700 dark:text-purple-400 font-bold">Em dia (<= 1 ano)</p>
-                         <p id="val-hb-emdia" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+            <div class="card flex flex-col justify-between">
+                 <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-4 text-center text-sm md:text-base">Hemoglobina Glicada (HbA1c)</h4>
+                 <div class="grid grid-cols-2 gap-3">
+                     <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Em dia (<= 1 ano)', 'hb')">
+                         <p class="text-xs uppercase text-purple-700 dark:text-purple-400 font-bold leading-tight mb-1">Em dia (&le; 1 ano)</p>
+                         <p id="val-hb-emdia" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</p>
                      </div>
-                     <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Atrasado (> 1 ano ou s/ reg.)', 'hb')">
-                         <p class="text-xs uppercase text-gray-500 dark:text-zinc-400 font-bold">Atrasado / S. Reg.</p>
-                         <p id="val-hb-atrasado" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                     <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Atrasado (> 1 ano ou s/ reg.)', 'hb')">
+                         <p class="text-xs uppercase text-gray-500 dark:text-zinc-400 font-bold leading-tight mb-1">Atrasado / S. Reg.</p>
+                         <p id="val-hb-atrasado" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</p>
                      </div>
                  </div>
             </div>
-            <div class="card">
-                 <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">Avaliação dos Pés (Data da Avaliação)</h4>
-                 <div class="grid grid-cols-2 gap-4">
-                     <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Em dia (<= 1 ano)', 'pes')">
-                         <p class="text-xs uppercase text-orange-700 dark:text-orange-400 font-bold">Em dia (<= 1 ano)</p>
-                         <p id="val-pes-emdia" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+            <div class="card flex flex-col justify-between">
+                 <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-4 text-center text-sm md:text-base">Avaliação dos Pés (Data da Avaliação)</h4>
+                 <div class="grid grid-cols-2 gap-3">
+                     <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Em dia (<= 1 ano)', 'pes')">
+                         <p class="text-xs uppercase text-orange-700 dark:text-orange-400 font-bold leading-tight mb-1">Em dia (&le; 1 ano)</p>
+                         <p id="val-pes-emdia" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</p>
                      </div>
-                     <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Pendente (> 1 ano ou s/ reg.)', 'pes')">
-                         <p class="text-xs uppercase text-gray-500 dark:text-zinc-400 font-bold">Pendente / S. Reg.</p>
-                         <p id="val-pes-pendente" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                     <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Pendente (> 1 ano ou s/ reg.)', 'pes')">
+                         <p class="text-xs uppercase text-gray-500 dark:text-zinc-400 font-bold leading-tight mb-1">Pendente / S. Reg.</p>
+                         <p id="val-pes-pendente" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</p>
                      </div>
                  </div>
             </div>
@@ -282,29 +282,29 @@
         <!-- Bloco 3: Aferições Clínicas -->
         <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4 flex items-center mt-10"><i class="fas fa-stethoscope mr-2 text-blue-600 dark:text-blue-400"></i> Sinais Vitais e Antropometria</h3>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div class="card">
-                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">Aferição de PA (Data da Medição)</h4>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Em dia (<= 180 dias)', 'pa')">
-                        <p class="text-xs uppercase text-emerald-700 dark:text-emerald-400 font-bold">Em dia (<= 180d)</p>
-                        <p id="val-pa-emdia" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+            <div class="card flex flex-col justify-between">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-4 text-center text-sm md:text-base">Aferição de PA (Data da Medição)</h4>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Em dia (<= 180 dias)', 'pa')">
+                        <p class="text-xs uppercase text-emerald-700 dark:text-emerald-400 font-bold leading-tight mb-1">Em dia (&le; 180d)</p>
+                        <p id="val-pa-emdia" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</p>
                     </div>
-                    <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Pendente (> 180 dias ou s/ reg.)', 'pa')">
-                        <p class="text-xs uppercase text-red-700 dark:text-red-400 font-bold">Pendente / S. Reg.</p>
-                        <p id="val-pa-pendente" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Pendente (> 180 dias ou s/ reg.)', 'pa')">
+                        <p class="text-xs uppercase text-red-700 dark:text-red-400 font-bold leading-tight mb-1">Pendente / S. Reg.</p>
+                        <p id="val-pa-pendente" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</p>
                     </div>
                 </div>
             </div>
-            <div class="card">
-                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-3 text-center">Antropometria (Data da Medição)</h4>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Em dia (<= 1 ano)', 'antropo')">
-                        <p class="text-xs uppercase text-emerald-700 dark:text-emerald-400 font-bold">Em dia (<= 1 ano)</p>
-                        <p id="val-antropo-emdia" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+            <div class="card flex flex-col justify-between">
+                <h4 class="font-bold text-gray-700 dark:text-zinc-300 mb-4 text-center text-sm md:text-base">Antropometria (Data da Medição)</h4>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Em dia (<= 1 ano)', 'antropo')">
+                        <p class="text-xs uppercase text-emerald-700 dark:text-emerald-400 font-bold leading-tight mb-1">Em dia (&le; 1 ano)</p>
+                        <p id="val-antropo-emdia" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</p>
                     </div>
-                    <div class="card cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition" onclick="abrirModalFiltro('Pendente (> 1 ano ou s/ reg.)', 'antropo')">
-                        <p class="text-xs uppercase text-red-700 dark:text-red-400 font-bold">Pendente / S. Reg.</p>
-                        <p id="val-antropo-pendente" class="text-3xl font-bold text-gray-900 dark:text-white">0</p>
+                    <div class="cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/60 border border-gray-200 dark:border-zinc-800 p-4 text-center rounded-lg bg-white dark:bg-zinc-900 transition flex flex-col justify-center min-h-[85px]" onclick="abrirModalFiltro('Pendente (> 1 ano ou s/ reg.)', 'antropo')">
+                        <p class="text-xs uppercase text-red-700 dark:text-red-400 font-bold leading-tight mb-1">Pendente / S. Reg.</p>
+                        <p id="val-antropo-pendente" class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">0</p>
                     </div>
                 </div>
             </div>
@@ -530,20 +530,6 @@
         let validos = [c1, c2].filter(v => v !== null);
         if (validos.length === 0) return null;
         return Math.min(...validos);
-    }
-
-    function checkRealizado(row, chavesPossiveis) {
-        for (let key of Object.keys(row)) {
-            let keyUpper = key.toUpperCase();
-            if (chavesPossiveis.some(c => keyUpper.includes(c.toUpperCase()))) {
-                let val = String(row[key] || '').trim().toUpperCase();
-                if (val === 'SIM' || val === 'REALIZADO' || val === 'AVALIADO') return true;
-                let num = normalizarNumero(row[key]);
-                if (num !== null && num > 0) return true;
-                if (val.match(/^\d{2}\/\d{2}\/\d{4}/)) return true;
-            }
-        }
-        return false;
     }
 
     // === GERENCIAMENTO DE LOCALSTORAGE ===
